@@ -18,7 +18,7 @@ interface TableProps<T extends { id?: string | number }> {
   className?: string;
 }
 
-export default function Table<T extends { id?: string | number } & Record<string, unknown>>({
+export default function Table<T extends { id?: string | number }>({
   data,
   columns,
   isLoading,
@@ -68,8 +68,8 @@ export default function Table<T extends { id?: string | number } & Record<string
                     className={cn('px-6 py-4 whitespace-nowrap text-sm text-gray-900', col.className)}
                   >
                     {col.render
-                      ? col.render(row[col.key], row)
-                      : String(row[col.key] ?? '')}
+                      ? col.render((row as Record<string, unknown>)[col.key], row)
+                      : String((row as Record<string, unknown>)[col.key] ?? '')}
                   </td>
                 ))}
               </tr>

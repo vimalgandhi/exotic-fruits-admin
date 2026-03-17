@@ -18,6 +18,21 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface ProductSeo {
+  metaTitle?: string;
+  metaDescription?: string;
+  index?: boolean;
+  follow?: boolean;
+  canonical?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: string;
+  twitterTitle?: string;
+  twitterDescription?: string;
+  twitterImage?: string;
+  schemaJson?: string;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -28,9 +43,12 @@ export interface Product {
   stock: number;
   category: string;
   categoryId: string;
+  originCountry?: string;
+  stockStatus?: 'In Stock' | 'Out of Stock';
   images: string[];
   status: 'active' | 'inactive' | 'draft';
   featured: boolean;
+  seo?: ProductSeo;
   createdAt: string;
   updatedAt: string;
 }

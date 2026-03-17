@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Plus, Search, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 import { useProducts } from '@/hooks/useProducts';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import type { Product } from '@/types';
@@ -10,6 +11,7 @@ import Button from '@/components/ui/button';
 import Table from '@/components/ui/table';
 
 export default function ProductsPage() {
+  const router = useRouter();
   const { products, isLoading, deleteProduct } = useProducts();
   const [search, setSearch] = useState('');
 
@@ -78,7 +80,11 @@ export default function ProductsPage() {
       header: 'Actions',
       render: (_: unknown, row: Product) => (
         <div className="flex items-center gap-2">
-          <button className="p-1 text-gray-400 hover:text-blue-600 transition-colors" aria-label="Edit">
+          <button
+            className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+            onClick={() => router.push(`/products/${row.id}`)}
+            aria-label="Edit"
+          >
             <Pencil className="h-4 w-4" />
           </button>
           <button
@@ -100,7 +106,7 @@ export default function ProductsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Products</h1>
           <p className="text-gray-500 mt-1">{products.length} products total</p>
         </div>
-        <Button>
+        <Button onClick={() => router.push('/products/new')}>
           <Plus className="h-4 w-4 mr-2" />
           Add Product
         </Button>
