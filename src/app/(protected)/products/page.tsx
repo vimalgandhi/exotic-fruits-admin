@@ -15,12 +15,35 @@ export default function ProductsPage() {
   const router = useRouter();
   const { products, isLoading, deleteProduct } = useProducts();
   const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const filtered = products.filter(
     (p) =>
       p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.category.toLowerCase().includes(search.toLowerCase())
   );
+
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filtered.slice(indexOfFirstItem, indexOfLastItem);
+
+  const paginate = (pageNumber: number) => {
+    if (pageNumber >= 1 && pageNumber <= totalPages) {
+      setCurrentPage(pageNumber);
+    }
+  };
+
+  const handleItemsPerPageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setItemsPerPage(Number(event.target.value));
+    setCurrentPage(1);
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+    setCurrentPage(1);
+  };
 
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
@@ -160,17 +183,80 @@ export default function ProductsPage() {
               type="text"
               placeholder="Search products..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={handleSearchChange}
               className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
         </div>
         <Table<Product>
-          data={filtered}
+          data={currentItems}
           columns={columns}
           isLoading={isLoading}
           emptyMessage="No products found"
         />
+      </div>
+
+      {/* Pagination */}
+      <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+          {/* Items Per Page */}
+          <div className="flex items-center gap-3">
+            <label className="text-sm font-medium text-gray-700">Items per page:</label>
+            <select
+              value={itemsPerPage}
+              onChange={handleItemsPerPageChange}
+              className="px-4 py-2 border border-gray-300 rounded-lg bg-white text-sm font-medium hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
+          </div>
+
+          {/* Page Info */}
+          <div className="text-sm font-medium text-gray-600">
+            Page <span className="text-blue-600 font-bold">{currentPage}</span> of{' '}
+            <span className="text-blue-600 font-bold">{totalPages || 1}</span> | Showing{' '}
+            <span className="text-blue-600 font-bold">{currentItems.length}</span> of{' '}
+            <span className="text-blue-600 font-bold">{filtered.length}</span> products
+          </div>
+
+          {/* Navigation */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => paginate(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-4 py-2 border border-blue-300 rounded-lg bg-blue-50 text-blue-600 font-medium hover:bg-blue-100 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-300 disabled:cursor-not-allowed transition"
+            >
+              ← Previous
+            </button>
+
+            <div className="flex items-center gap-1 px-3 py-2 bg-gray-50 rounded-lg border border-gray-300">
+              {Array.from({ length: totalPages || 1 }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  onClick={() => paginate(page)}
+                  className={`min-w-[32px] h-8 rounded font-semibold transition ${
+                    currentPage === page
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-gray-700 hover:bg-gray-200 border border-gray-300'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => paginate(currentPage + 1)}
+              disabled={currentPage === totalPages || totalPages === 0}
+              className="px-4 py-2 border border-blue-300 rounded-lg bg-blue-50 text-blue-600 font-medium hover:bg-blue-100 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-300 disabled:cursor-not-allowed transition"
+            >
+              Next →
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
