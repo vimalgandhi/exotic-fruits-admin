@@ -113,3 +113,20 @@ export interface TableColumn<T> {
   render?: (value: unknown, row: T) => React.ReactNode;
   className?: string;
 }
+
+export interface ImageUploadProps {
+  value?: string;
+  onChange: (base64: string) => void;
+  maxSize?: number;
+  accept?: string;
+  preview?: boolean;
+  crop?: boolean;
+}
+
+export interface HtmlEditorProps {
+  value: string;
+  onChange: (html: string) => void;
+  placeholder?: string;
+  readOnly?: boolean;
+  theme?: string;
+}

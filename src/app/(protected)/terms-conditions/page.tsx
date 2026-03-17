@@ -1,21 +1,35 @@
 'use client';
 
-import { useState } from 'react';
-import { Save } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Save, Eye, Edit2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { MOCK_CONTENT_PAGES } from '@/lib/mock-data';
-import { formatDate } from '@/lib/utils';
+import DOMPurify from 'dompurify';
+
+const sanitize = (html: string) =>
+  typeof window !== 'undefined' ? DOMPurify.sanitize(html) : html;
 import Button from '@/components/ui/button';
+import HtmlEditor from '@/components/ui/HtmlEditor';
+
+const STORAGE_KEY = 'terms-conditions-content';
+const DEFAULT_CONTENT =
+  '<h1>Terms &amp; Conditions</h1><p>Enter your terms and conditions content here...</p>';
 
 export default function TermsConditionsPage() {
-  const [content, setContent] = useState(MOCK_CONTENT_PAGES['terms-conditions'].content);
+  const [content, setContent] = useState(DEFAULT_CONTENT);
   const [isSaving, setIsSaving] = useState(false);
-  const page = MOCK_CONTENT_PAGES['terms-conditions'];
+  const [isEditing, setIsEditing] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) setContent(saved);
+  }, []);
 
   const handleSave = async () => {
     setIsSaving(true);
-    await new Promise((r) => setTimeout(r, 600));
+    await new Promise((r) => setTimeout(r, 400));
+    localStorage.setItem(STORAGE_KEY, content);
     setIsSaving(false);
+    setIsEditing(false);
     toast.success('Terms & conditions updated successfully');
   };
 
@@ -24,24 +38,42 @@ export default function TermsConditionsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Terms &amp; Conditions</h1>
-          <p className="text-gray-500 mt-1">Last updated: {formatDate(page.updatedAt)}</p>
+          <p className="text-gray-500 mt-1">Manage your terms and conditions content</p>
         </div>
-        <Button onClick={handleSave} isLoading={isSaving}>
-          <Save className="h-4 w-4 mr-2" />
-          Save Changes
-        </Button>
+        <div className="flex items-center gap-2">
+          {isEditing ? (
+            <>
+              <Button variant="outline" onClick={() => setIsEditing(false)}>
+                <Eye className="h-4 w-4 mr-2" />
+                Preview
+              </Button>
+              <Button onClick={handleSave} isLoading={isSaving}>
+                <Save className="h-4 w-4 mr-2" />
+                Save Changes
+              </Button>
+            </>
+          ) : (
+            <Button onClick={() => setIsEditing(true)}>
+              <Edit2 className="h-4 w-4 mr-2" />
+              Edit Content
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Content</label>
-        <textarea
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-green-500"
-          rows={20}
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="Enter terms & conditions content (Markdown supported)..."
-        />
-        <p className="text-xs text-gray-400 mt-2">Markdown formatting is supported</p>
+        {isEditing ? (
+          <HtmlEditor
+            value={content}
+            onChange={setContent}
+            placeholder="Enter terms & conditions content..."
+          />
+        ) : (
+          <div
+            className="prose prose-sm max-w-none"
+            dangerouslySetInnerHTML={{ __html: sanitize(content) }}
+          />
+        )}
       </div>
     </div>
   );
