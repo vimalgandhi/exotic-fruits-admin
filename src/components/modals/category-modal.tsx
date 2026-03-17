@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Save } from 'lucide-react';
 import { slugify } from '@/lib/utils';
-import type { Category } from '@/types';
+import type { Category } from '@/types/category';
 import Modal from '@/components/ui/modal';
 import Button from '@/components/ui/button';
 import Input from '@/components/ui/input';
@@ -75,7 +75,7 @@ export default function CategoryModal({
   };
 
   const handleFormSubmit = async (values: CategoryFormValues) => {
-    await onSubmit(values);
+    await onSubmit({ ...values, image: values.image ?? '' });
     onClose();
   };
 

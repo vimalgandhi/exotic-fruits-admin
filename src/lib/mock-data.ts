@@ -1,4 +1,5 @@
-import type { User, Product, Category, DashboardStats, SeoData, ContentPage } from '@/types';
+import type { User, Product, DashboardStats, SeoData, ContentPage } from '@/types';
+import type { Category } from '@/types/category';
 
 export const MOCK_USER: User = {
   id: '1',
@@ -19,6 +20,7 @@ export const MOCK_CATEGORIES: Category[] = [
     name: 'Tropical Fruits',
     slug: 'tropical-fruits',
     description: 'Fruits from tropical regions',
+    image: '',
     productCount: 12,
     status: 'active',
     createdAt: '2024-01-01T00:00:00.000Z',
@@ -29,6 +31,7 @@ export const MOCK_CATEGORIES: Category[] = [
     name: 'Citrus Fruits',
     slug: 'citrus-fruits',
     description: 'Citrus family fruits',
+    image: '',
     productCount: 8,
     status: 'active',
     createdAt: '2024-01-02T00:00:00.000Z',
@@ -39,6 +42,7 @@ export const MOCK_CATEGORIES: Category[] = [
     name: 'Stone Fruits',
     slug: 'stone-fruits',
     description: 'Fruits with a pit or stone',
+    image: '',
     productCount: 6,
     status: 'active',
     createdAt: '2024-01-03T00:00:00.000Z',
@@ -49,6 +53,7 @@ export const MOCK_CATEGORIES: Category[] = [
     name: 'Berries',
     slug: 'berries',
     description: 'Small pulpy fruits',
+    image: '',
     productCount: 10,
     status: 'inactive',
     createdAt: '2024-01-04T00:00:00.000Z',

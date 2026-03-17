@@ -69,18 +69,8 @@ export interface Product {
   updatedAt: string;
 }
 
-export interface Category {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string;
-  image?: string;
-  parentId?: string;
-  productCount: number;
-  status: 'active' | 'inactive';
-  createdAt: string;
-  updatedAt: string;
-}
+export type { Category } from '@/types/category';
+import type { Category } from '@/types/category';
 
 export interface DashboardStats {
   totalProducts: number;
