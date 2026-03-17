@@ -8,14 +8,27 @@ import { formatDate } from '@/lib/utils';
 import type { Category } from '@/types';
 import Button from '@/components/ui/button';
 import Table from '@/components/ui/table';
+import CategoryModal from '@/components/modals/category-modal';
 
 export default function CategoriesPage() {
-  const { categories, isLoading, deleteCategory } = useCategories();
+  const { categories, isLoading, createCategory, updateCategory, deleteCategory } = useCategories();
   const [search, setSearch] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
   const filtered = categories.filter((c) =>
     c.name.toLowerCase().includes(search.toLowerCase())
   );
+
+  const handleAdd = () => {
+    setEditingCategory(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEdit = (category: Category) => {
+    setEditingCategory(category);
+    setIsModalOpen(true);
+  };
 
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
@@ -24,6 +37,22 @@ export default function CategoriesPage() {
       toast.success(`"${name}" deleted successfully`);
     } catch {
       toast.error('Failed to delete category');
+    }
+  };
+
+  const handleModalSubmit = async (
+    data: Omit<Category, 'id' | 'createdAt' | 'updatedAt' | 'productCount'>
+  ) => {
+    try {
+      if (editingCategory) {
+        await updateCategory(editingCategory.id, data);
+        toast.success(`"${data.name}" updated successfully`);
+      } else {
+        await createCategory(data);
+        toast.success(`"${data.name}" created successfully`);
+      }
+    } catch {
+      toast.error(editingCategory ? 'Failed to update category' : 'Failed to create category');
     }
   };
 
@@ -69,7 +98,11 @@ export default function CategoriesPage() {
       header: 'Actions',
       render: (_: unknown, row: Category) => (
         <div className="flex items-center gap-2">
-          <button className="p-1 text-gray-400 hover:text-blue-600 transition-colors" aria-label="Edit">
+          <button
+            className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+            onClick={() => handleEdit(row)}
+            aria-label="Edit"
+          >
             <Pencil className="h-4 w-4" />
           </button>
           <button
@@ -91,7 +124,7 @@ export default function CategoriesPage() {
           <h1 className="text-2xl font-bold text-gray-900">Categories</h1>
           <p className="text-gray-500 mt-1">{categories.length} categories total</p>
         </div>
-        <Button>
+        <Button onClick={handleAdd}>
           <Plus className="h-4 w-4 mr-2" />
           Add Category
         </Button>
@@ -117,6 +150,14 @@ export default function CategoriesPage() {
           emptyMessage="No categories found"
         />
       </div>
+
+      <CategoryModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        category={editingCategory}
+        onSubmit={handleModalSubmit}
+        isLoading={isLoading}
+      />
     </div>
   );
 }
