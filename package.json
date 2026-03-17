@@ -1,7 +1,7 @@
 {
-  "name": "exotic-fruits-admin",
+  "name": "product-admin-panel",
   "version": "1.0.0",
-  "description": "Admin panel for Exotic Fruits - Phase 1 Implementation",
+  "description": "Admin panel - Phase 1 Implementation",
   "private": true,
   "scripts": {
     "dev": "next dev",
