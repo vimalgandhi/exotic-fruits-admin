@@ -3,7 +3,6 @@
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
-import Image from '@tiptap/extension-image';
 import {
   Bold,
   Italic,
@@ -30,7 +29,6 @@ export default function HtmlEditor({
     extensions: [
       StarterKit,
       Link.configure({ openOnClick: false }),
-      Image,
     ],
     content: value,
     onUpdate: ({ editor: ed }) => {
