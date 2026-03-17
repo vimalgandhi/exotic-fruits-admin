@@ -18,9 +18,23 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface PriceListItem {
+  unitId: number;
+  unitName: string;
+  unitValue: string;
+  unitPrice: number;
+  discountType: 'Percentage' | 'Fixed';
+  discount: string;
+  afterDiscountPrice: number;
+  isactive: boolean;
+  createdon: string;
+  updatedon: string;
+}
+
 export interface ProductSeo {
   metaTitle?: string;
   metaDescription?: string;
+  seoAlt?: string;
   index?: boolean;
   follow?: boolean;
   canonical?: string;
@@ -44,7 +58,9 @@ export interface Product {
   category: string;
   categoryId: string;
   originCountry?: string;
-  stockStatus?: 'In Stock' | 'Out of Stock';
+  foodType?: string;
+  stockStatus?: 'In Stock' | 'Out Stock' | 'Out of Stock';
+  pricelist?: PriceListItem[];
   images: string[];
   status: 'active' | 'inactive' | 'draft';
   featured: boolean;
