@@ -1,17 +1,25 @@
-import { Request, Response, NextFunction } from 'express';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-// Authentication middleware
-export const authenticate = (req: Request, res: Response, next: NextFunction) => {
-    const token = req.headers['authorization'];
+const publicRoutes = ['/login'];
 
-    if (!token) {
-        return res.status(401).json({ message: 'No token provided.' });
-    }
+export function middleware(request: NextRequest) {
+  const token = request.cookies.get('auth_token')?.value;
+  const { pathname } = request.nextUrl;
 
-    // Validate the token (mockup for demonstration)
-    if (token !== 'your-valid-token') {
-        return res.status(403).json({ message: 'Invalid token.' });
-    }
+  const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route));
 
-    next(); // Proceed to the next middleware or route
+  if (!token && !isPublicRoute) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  if (token && pathname === '/login') {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|api).*)'],
 };
