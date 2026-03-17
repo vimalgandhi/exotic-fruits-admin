@@ -128,5 +128,4 @@ export interface HtmlEditorProps {
   onChange: (html: string) => void;
   placeholder?: string;
   readOnly?: boolean;
-  theme?: string;
 }
