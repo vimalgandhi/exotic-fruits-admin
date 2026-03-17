@@ -123,9 +123,3 @@ export interface ImageUploadProps {
   crop?: boolean;
 }
 
-export interface HtmlEditorProps {
-  value: string;
-  onChange: (html: string) => void;
-  placeholder?: string;
-  readOnly?: boolean;
-}

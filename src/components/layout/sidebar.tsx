@@ -6,8 +6,6 @@ import {
   LayoutDashboard,
   Package,
   Tag,
-  Shield,
-  FileText,
   Leaf,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -16,8 +14,6 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Products', href: '/products', icon: Package },
   { name: 'Categories', href: '/categories', icon: Tag },
-  { name: 'Privacy Policy', href: '/privacy-policy', icon: Shield },
-  { name: 'Terms & Conditions', href: '/terms-conditions', icon: FileText },
 ];
 
 export default function Sidebar() {
