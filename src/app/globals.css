@@ -18,52 +18,41 @@
   }
 }
 
-/* TipTap Editor Styles */
-.ProseMirror {
+/* Draft WYSIWYG Styles */
+.wrapper-class {
+  @apply w-full;
+}
+
+.editor-class {
   @apply outline-none;
+  border: none;
 }
 
-.ProseMirror p.is-editor-empty:first-child::before {
-  @apply text-gray-400 pointer-events-none float-left h-0;
-  content: attr(data-placeholder);
+.toolbar-class {
+  @apply flex flex-wrap gap-1 p-2;
 }
 
-.ProseMirror h1 {
-  @apply text-2xl font-bold my-4;
+.toolbar-class .rdw-option-wrapper {
+  @apply border border-gray-300 dark:border-gray-600 rounded px-2 py-1 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer;
 }
 
-.ProseMirror h2 {
-  @apply text-xl font-bold my-3;
+.toolbar-class .rdw-option-wrapper.rdw-option-active {
+  @apply bg-blue-600 text-white;
 }
 
-.ProseMirror ul {
-  @apply list-disc list-inside my-2;
+.toolbar-class .rdw-separator {
+  @apply bg-gray-300 dark:bg-gray-600 mx-2;
 }
 
-.ProseMirror ol {
-  @apply list-decimal list-inside my-2;
+/* Dark mode support */
+.rdw-editor-toolbar {
+  @apply bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700;
 }
 
-.ProseMirror code {
-  @apply bg-gray-200 px-1 py-0.5 rounded text-sm font-mono;
+.rdw-editor-main {
+  @apply bg-white dark:bg-gray-900;
 }
 
-.ProseMirror pre {
-  @apply bg-gray-200 p-4 rounded-lg my-2 overflow-x-auto;
-}
-
-.ProseMirror pre code {
-  @apply bg-transparent p-0;
-}
-
-.ProseMirror a {
-  @apply text-blue-600 underline hover:text-blue-800;
-}
-
-.ProseMirror blockquote {
-  @apply border-l-4 border-gray-300 pl-4 italic my-2;
-}
-
-.ProseMirror hr {
-  @apply my-4 border-t border-gray-300;
+.rdw-editor-main .rdw-editor-toolbar {
+  @apply border-b border-gray-300 dark:border-gray-700;
 }
