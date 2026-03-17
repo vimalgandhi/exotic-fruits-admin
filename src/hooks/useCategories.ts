@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import type { Category } from '@/types';
+import type { Category } from '@/types/category';
 import { MOCK_CATEGORIES } from '@/lib/mock-data';
 
 const STORAGE_KEY = 'admin_categories';
