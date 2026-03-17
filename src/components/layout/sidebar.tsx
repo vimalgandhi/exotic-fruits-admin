@@ -52,16 +52,29 @@ export default function Sidebar() {
     }
   }, [pathname, isMobile]);
 
+  // Disable/enable body scroll when sidebar is open on mobile
+  useEffect(() => {
+    if (isMobile && isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, isMobile]);
+
   return (
     <>
-      {/* Hamburger button - mobile only */}
-      {isMobile && (
+      {/* Floating open button - mobile only, shown when sidebar is closed */}
+      {isMobile && !isOpen && (
         <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="fixed top-4 left-4 z-50 p-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors"
-          aria-label="Toggle sidebar"
+          onClick={() => setIsOpen(true)}
+          className="fixed bottom-6 right-6 z-40 w-14 h-14 bg-gray-900 text-white rounded-full hover:bg-gray-700 shadow-lg flex items-center justify-center transition-colors"
+          aria-label="Open sidebar"
         >
-          {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          <Menu className="h-6 w-6" />
         </button>
       )}
 
@@ -70,6 +83,7 @@ export default function Sidebar() {
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-30"
           onClick={() => setIsOpen(false)}
+          aria-hidden="true"
         />
       )}
 
@@ -80,19 +94,31 @@ export default function Sidebar() {
           // Desktop: side-by-side, normal flow
           'md:relative md:min-h-screen md:translate-x-0',
           // Mobile: fixed overlay, slide in/out
-          isMobile && 'fixed left-0 top-0 h-screen z-40',
+          isMobile && 'fixed left-0 top-0 h-screen z-40 shadow-2xl',
           isMobile && !isOpen && '-translate-x-full',
           isMobile && isOpen && 'translate-x-0'
         )}
       >
+        {/* Logo & Close button */}
         <div className="flex items-center gap-3 px-6 py-5 border-b border-gray-800">
           <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-green-600">
             <Leaf className="h-5 w-5 text-white" />
           </div>
-          <div>
+          <div className="flex-1">
             <p className="text-sm font-bold text-white">Exotic Fruits</p>
             <p className="text-xs text-gray-400">Admin Panel</p>
           </div>
+
+          {/* Close icon - mobile only, top-right of sidebar */}
+          {isMobile && (
+            <button
+              onClick={() => setIsOpen(false)}
+              className="p-1.5 hover:bg-gray-800 rounded-lg transition-colors flex-shrink-0"
+              aria-label="Close sidebar"
+            >
+              <X className="h-5 w-5 text-gray-300" />
+            </button>
+          )}
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1">
