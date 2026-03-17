@@ -10,6 +10,7 @@ import { slugify } from '@/lib/utils';
 import type { Product, Category } from '@/types';
 import Button from '@/components/ui/button';
 import Input from '@/components/ui/input';
+import ImageUpload from '@/components/ui/ImageUpload';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
@@ -21,7 +22,6 @@ const productSchema = z.object({
   categoryId: z.string().min(1, 'Category is required'),
   originCountry: z.string().optional(),
   stockStatus: z.enum(['In Stock', 'Out of Stock']).optional(),
-  images: z.string().optional(),
   status: z.enum(['active', 'inactive', 'draft']),
   featured: z.boolean().optional(),
   // SEO fields
@@ -51,6 +51,7 @@ interface ProductFormProps {
 export default function ProductForm({ product, categories, onSubmit, isLoading }: ProductFormProps) {
   const router = useRouter();
   const [seoExpanded, setSeoExpanded] = useState(false);
+  const [imageValue, setImageValue] = useState<string>(product?.images?.[0] ?? '');
 
   const {
     register,
@@ -70,7 +71,6 @@ export default function ProductForm({ product, categories, onSubmit, isLoading }
       categoryId: product?.categoryId ?? '',
       originCountry: product?.originCountry ?? '',
       stockStatus: product?.stockStatus ?? 'In Stock',
-      images: product?.images?.join(', ') ?? '',
       status: product?.status ?? 'active',
       featured: product?.featured ?? false,
       seoMetaTitle: product?.seo?.metaTitle ?? '',
@@ -109,7 +109,7 @@ export default function ProductForm({ product, categories, onSubmit, isLoading }
       categoryId: values.categoryId,
       originCountry: values.originCountry,
       stockStatus: values.stockStatus,
-      images: values.images ? values.images.split(',').map((s) => s.trim()).filter(Boolean) : [],
+      images: imageValue ? [imageValue] : [],
       status: values.status,
       featured: values.featured ?? false,
       seo: {
@@ -254,10 +254,15 @@ export default function ProductForm({ product, categories, onSubmit, isLoading }
             placeholder="e.g. Thailand"
             {...register('originCountry')}
           />
-          <Input
-            label="Image URLs (comma-separated)"
-            placeholder="https://example.com/image.jpg"
-            {...register('images')}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Product Image</label>
+          <ImageUpload
+            value={imageValue}
+            onChange={setImageValue}
+            preview
+            crop
           />
         </div>
 

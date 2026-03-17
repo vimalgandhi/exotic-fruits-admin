@@ -8,7 +8,6 @@ import {
   Tag,
   Shield,
   FileText,
-  Phone,
   Leaf,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -19,7 +18,6 @@ const navigation = [
   { name: 'Categories', href: '/categories', icon: Tag },
   { name: 'Privacy Policy', href: '/privacy-policy', icon: Shield },
   { name: 'Terms & Conditions', href: '/terms-conditions', icon: FileText },
-  { name: 'Contact Us', href: '/contact-us', icon: Phone },
 ];
 
 export default function Sidebar() {
