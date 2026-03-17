@@ -19,7 +19,7 @@ export default function Header({ title }: HeaderProps) {
   };
 
   return (
-    <header className="flex items-center justify-between h-16 px-6 bg-white border-b border-gray-200">
+    <header className="flex items-center justify-between h-16 pl-16 pr-6 md:px-6 bg-white border-b border-gray-200">
       <div>
         {title && <h1 className="text-xl font-semibold text-gray-900">{title}</h1>}
       </div>
