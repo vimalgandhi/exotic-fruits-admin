@@ -110,8 +110,8 @@ export default function CategoriesPage() {
             />
           </div>
         </div>
-        <Table
-          data={filtered as unknown as Record<string, unknown>[]}
+        <Table<Category>
+          data={filtered}
           columns={columns}
           isLoading={isLoading}
           emptyMessage="No categories found"

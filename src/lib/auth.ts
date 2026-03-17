@@ -11,7 +11,8 @@ export function setToken(token: string, days = 7): void {
   if (typeof document === 'undefined') return;
   const expires = new Date();
   expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-  document.cookie = `${AUTH_TOKEN_KEY}=${token};expires=${expires.toUTCString()};path=/;SameSite=Strict`;
+  const secure = location.protocol === 'https:' ? ';Secure' : '';
+  document.cookie = `${AUTH_TOKEN_KEY}=${token};expires=${expires.toUTCString()};path=/;SameSite=Strict${secure}`;
 }
 
 export function removeToken(): void {

@@ -119,8 +119,8 @@ export default function ProductsPage() {
             />
           </div>
         </div>
-        <Table
-          data={filtered as unknown as Record<string, unknown>[]}
+        <Table<Product>
+          data={filtered}
           columns={columns}
           isLoading={isLoading}
           emptyMessage="No products found"

@@ -10,7 +10,7 @@ interface Column<T> {
   className?: string;
 }
 
-interface TableProps<T> {
+interface TableProps<T extends { id?: string | number }> {
   data: T[];
   columns: Column<T>[];
   isLoading?: boolean;
@@ -18,7 +18,7 @@ interface TableProps<T> {
   className?: string;
 }
 
-export default function Table<T extends Record<string, unknown>>({
+export default function Table<T extends { id?: string | number } & Record<string, unknown>>({
   data,
   columns,
   isLoading,
@@ -61,7 +61,7 @@ export default function Table<T extends Record<string, unknown>>({
             </tr>
           ) : (
             data.map((row, rowIndex) => (
-              <tr key={rowIndex} className="hover:bg-gray-50 transition-colors">
+              <tr key={row.id ?? rowIndex} className="hover:bg-gray-50 transition-colors">
                 {columns.map((col) => (
                   <td
                     key={col.key}
