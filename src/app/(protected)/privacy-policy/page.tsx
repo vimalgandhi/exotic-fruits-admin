@@ -3,6 +3,10 @@
 import { useEffect, useState } from 'react';
 import { Save, Eye, Edit2 } from 'lucide-react';
 import { toast } from 'sonner';
+import DOMPurify from 'dompurify';
+
+const sanitize = (html: string) =>
+  typeof window !== 'undefined' ? DOMPurify.sanitize(html) : html;
 import Button from '@/components/ui/button';
 import HtmlEditor from '@/components/ui/HtmlEditor';
 
@@ -66,7 +70,7 @@ export default function PrivacyPolicyPage() {
         ) : (
           <div
             className="prose prose-sm max-w-none"
-            dangerouslySetInnerHTML={{ __html: content }}
+            dangerouslySetInnerHTML={{ __html: sanitize(content) }}
           />
         )}
       </div>
