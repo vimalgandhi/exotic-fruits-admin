@@ -71,7 +71,7 @@ export default function Sidebar() {
       {isMobile && !isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed top-4 left-4 z-50 w-12 h-12 bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-lg flex items-center justify-center md:hidden transition-all"
+          className="fixed top-4 left-4 z-50 w-8 h-8 bg-green-300 rounded-lg hover:bg-green-400 shadow-lg flex items-center justify-center md:hidden transition-all"
           aria-label="Open sidebar"
         >
           <Menu className="h-6 w-6" />
