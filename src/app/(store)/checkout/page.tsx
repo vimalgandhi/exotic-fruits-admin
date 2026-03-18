@@ -20,7 +20,7 @@ const checkoutSchema = z.object({
   address: z.string().min(5, 'Address is required'),
   city: z.string().min(2, 'City is required'),
   state: z.string().min(2, 'State is required'),
-  pincode: z.string().min(6, 'Valid pincode required').max(6),
+  pincode: z.string().regex(/^\d{6}$/, 'Pincode must be 6 digits'),
   paymentMethod: z.enum(['cod', 'upi', 'card'], {
     required_error: 'Select a payment method',
   }),

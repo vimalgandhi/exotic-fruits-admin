@@ -1,3 +1,5 @@
+import React from 'react'
+
 interface StatCardProps {
   title: string
   value: string | number
@@ -5,8 +7,6 @@ interface StatCardProps {
   trendColor?: 'green' | 'red'
   icon?: React.ReactNode
 }
-
-import React from 'react'
 
 export function StatCard({
   title,
