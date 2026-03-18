@@ -1,41 +1,27 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { Category } from '@/types/category';
 import { MOCK_CATEGORIES } from '@/lib/mock-data';
-
-const STORAGE_KEY = 'admin_categories';
-
-function loadCategories(): Category[] {
-  if (typeof window === 'undefined') return MOCK_CATEGORIES;
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? (JSON.parse(stored) as Category[]) : MOCK_CATEGORIES;
-  } catch {
-    return MOCK_CATEGORIES;
-  }
-}
-
-function saveCategories(categories: Category[]): void {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(categories));
-}
+import apiClient from '@/lib/api';
 
 export function useCategories() {
-  const [categories, setCategories] = useState<Category[]>(MOCK_CATEGORIES);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setCategories(loadCategories());
+    fetchCategories();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchCategories = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      setCategories(loadCategories());
+      const response = await apiClient.get<{ data: Category[] }>('/categories');
+      setCategories(response.data.data ?? []);
     } catch {
       setError('Failed to fetch categories');
+      setCategories(MOCK_CATEGORIES);
     } finally {
       setIsLoading(false);
     }
@@ -44,20 +30,12 @@ export function useCategories() {
   const createCategory = useCallback(async (data: Omit<Category, 'id' | 'createdAt' | 'updatedAt' | 'productCount'>) => {
     setIsLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      const newCategory: Category = {
-        ...data,
-        id: String(Date.now()),
-        productCount: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      setCategories((prev) => {
-        const updated = [newCategory, ...prev];
-        saveCategories(updated);
-        return updated;
-      });
+      const response = await apiClient.post<{ data: Category }>('/categories', data);
+      const newCategory = response.data.data;
+      setCategories((prev) => [newCategory, ...prev]);
       return newCategory;
+    } catch {
+      throw new Error('Failed to create category');
     } finally {
       setIsLoading(false);
     }
@@ -66,14 +44,11 @@ export function useCategories() {
   const updateCategory = useCallback(async (id: string, data: Partial<Category>) => {
     setIsLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      setCategories((prev) => {
-        const updated = prev.map((c) =>
-          c.id === id ? { ...c, ...data, updatedAt: new Date().toISOString() } : c
-        );
-        saveCategories(updated);
-        return updated;
-      });
+      const response = await apiClient.put<{ data: Category }>(`/categories/${id}`, data);
+      const updated = response.data.data;
+      setCategories((prev) => prev.map((c) => (c.id === id ? updated : c)));
+    } catch {
+      throw new Error('Failed to update category');
     } finally {
       setIsLoading(false);
     }
@@ -82,12 +57,10 @@ export function useCategories() {
   const deleteCategory = useCallback(async (id: string) => {
     setIsLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      setCategories((prev) => {
-        const updated = prev.filter((c) => c.id !== id);
-        saveCategories(updated);
-        return updated;
-      });
+      await apiClient.delete(`/categories/${id}`);
+      setCategories((prev) => prev.filter((c) => c.id !== id));
+    } catch {
+      throw new Error('Failed to delete category');
     } finally {
       setIsLoading(false);
     }

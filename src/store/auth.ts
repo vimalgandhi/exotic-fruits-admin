@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { User, AuthState, LoginCredentials } from '@/types';
 import { setToken, removeToken, setStoredUser, removeStoredUser, getStoredUser, getToken } from '@/lib/auth';
+import apiClient from '@/lib/api';
 import { MOCK_CREDENTIALS, MOCK_USER } from '@/lib/mock-data';
 
 interface AuthStore extends AuthState {
@@ -26,17 +27,27 @@ export const useAuthStore = create<AuthStore>((set) => ({
   login: async (credentials: LoginCredentials) => {
     set({ isLoading: true });
     try {
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      let token: string;
+      let user: User;
 
-      if (
-        credentials.email !== MOCK_CREDENTIALS.email ||
-        credentials.password !== MOCK_CREDENTIALS.password
-      ) {
-        throw new Error('Invalid email or password');
+      try {
+        const response = await apiClient.post<{ data: { user: User; token: string } }>(
+          '/auth/login',
+          credentials
+        );
+        token = response.data.data.token;
+        user = response.data.data.user;
+      } catch {
+        // Fall back to mock credentials when the backend is not available
+        if (
+          credentials.email !== MOCK_CREDENTIALS.email ||
+          credentials.password !== MOCK_CREDENTIALS.password
+        ) {
+          throw new Error('Invalid email or password');
+        }
+        token = 'mock_token_' + Date.now();
+        user = MOCK_USER;
       }
-
-      const token = 'mock_token_' + Date.now();
-      const user = MOCK_USER;
 
       setToken(token);
       setStoredUser(user);
