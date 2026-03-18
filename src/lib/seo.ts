@@ -1,90 +1,112 @@
 import { Metadata } from 'next'
-import { Product } from '@/types'
 
-export const DEFAULT_SEO = {
-  siteName: 'Exotic Fruits',
-  siteUrl: 'https://exotic-fruits.com',
-  defaultTitle: 'Exotic Fruits – Premium Exotic Fruits Delivered Fresh',
-  defaultDescription:
-    'Hand-picked premium exotic fruits from around the globe. Fresh, organic, and delivered straight to your doorstep.',
-  defaultImage: 'https://exotic-fruits.com/og-image.jpg',
-  twitterHandle: '@exoticfruits',
-}
+const SITE_NAME = 'Exotic Fruits'
+const SITE_URL = 'https://exoticfruits.in'
+const SITE_DESCRIPTION =
+  'Premium exotic fruits from around the globe, delivered fresh to your doorstep in India.'
 
-export function generateMetadata({
-  title,
-  description,
-  image,
-  url,
-  noIndex = false,
-}: {
+interface SeoOptions {
   title?: string
   description?: string
+  path?: string
   image?: string
-  url?: string
+  type?: 'website' | 'article'
   noIndex?: boolean
-}): Metadata {
-  const metaTitle = title
-    ? `${title} | ${DEFAULT_SEO.siteName}`
-    : DEFAULT_SEO.defaultTitle
-  const metaDescription = description ?? DEFAULT_SEO.defaultDescription
-  const metaImage = image ?? DEFAULT_SEO.defaultImage
-  const metaUrl = url ?? DEFAULT_SEO.siteUrl
+}
+
+/**
+ * Generate Next.js Metadata for a page, including OpenGraph and Twitter tags.
+ */
+export function generateMetadata(options: SeoOptions = {}): Metadata {
+  const {
+    title,
+    description = SITE_DESCRIPTION,
+    path = '',
+    image = `${SITE_URL}/og-image.jpg`,
+    type = 'website',
+    noIndex = false,
+  } = options
+
+  const fullTitle = title ? `${title} | ${SITE_NAME}` : SITE_NAME
+  const url = `${SITE_URL}${path}`
 
   return {
-    title: metaTitle,
-    description: metaDescription,
-    robots: noIndex ? 'noindex, nofollow' : 'index, follow',
+    title: fullTitle,
+    description,
+    metadataBase: new URL(SITE_URL),
+    alternates: { canonical: url },
+    robots: noIndex
+      ? { index: false, follow: false }
+      : { index: true, follow: true },
     openGraph: {
-      title: metaTitle,
-      description: metaDescription,
-      url: metaUrl,
-      siteName: DEFAULT_SEO.siteName,
-      images: [{ url: metaImage, width: 1200, height: 630, alt: metaTitle }],
-      type: 'website',
+      title: fullTitle,
+      description,
+      url,
+      siteName: SITE_NAME,
+      type,
+      images: [{ url: image, width: 1200, height: 630, alt: fullTitle }],
     },
     twitter: {
       card: 'summary_large_image',
-      title: metaTitle,
-      description: metaDescription,
-      images: [metaImage],
-      site: DEFAULT_SEO.twitterHandle,
+      title: fullTitle,
+      description,
+      images: [image],
     },
   }
 }
 
-export function productSchema(product: Product) {
+const AVAILABILITY_MAP: Record<'InStock' | 'OutOfStock', string> = {
+  InStock: 'https://schema.org/InStock',
+  OutOfStock: 'https://schema.org/OutOfStock',
+}
+
+/**
+ * Generate JSON-LD Schema.org markup for a product.
+ */
+export function productSchema(product: {
+  name: string
+  description: string
+  image: string
+  price: number
+  slug: string
+  availability?: 'InStock' | 'OutOfStock'
+}) {
   return {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: product.name,
     description: product.description,
     image: product.image,
+    url: `${SITE_URL}/products/${product.slug}`,
     offers: {
       '@type': 'Offer',
       priceCurrency: 'INR',
       price: product.price,
-      availability:
-        product.stock === 'In Stock'
-          ? 'https://schema.org/InStock'
-          : 'https://schema.org/OutOfStock',
+      availability: AVAILABILITY_MAP[product.availability ?? 'InStock'],
+      url: `${SITE_URL}/products/${product.slug}`,
     },
   }
 }
 
-export function organizationSchema() {
+/**
+ * Generate JSON-LD Schema.org markup for the organisation.
+ */
+export function organisationSchema() {
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: DEFAULT_SEO.siteName,
-    url: DEFAULT_SEO.siteUrl,
-    logo: `${DEFAULT_SEO.siteUrl}/logo.png`,
-    sameAs: [],
+    name: SITE_NAME,
+    url: SITE_URL,
+    logo: `${SITE_URL}/logo.png`,
     contactPoint: {
       '@type': 'ContactPoint',
       telephone: '+91-98765-43210',
-      contactType: 'customer service',
+      contactType: 'Customer Service',
       availableLanguage: 'English',
     },
+    sameAs: [
+      'https://www.instagram.com/exoticfruits.in',
+      'https://www.facebook.com/exoticfruits.in',
+    ],
   }
 }

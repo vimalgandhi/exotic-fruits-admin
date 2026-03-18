@@ -1,152 +1,150 @@
-import { Metadata } from 'next'
-import { generateMetadata } from '@/lib/seo'
-
-export const metadata: Metadata = generateMetadata({
-  title: 'Privacy Policy',
-  description:
-    'Read the Privacy Policy for Exotic Fruits – how we collect, use, and protect your personal data.',
-  url: 'https://exotic-fruits.com/privacy',
-})
-
-const LAST_UPDATED = 'March 1, 2025'
-
 export default function PrivacyPage() {
   return (
-    <div className="mx-auto max-w-4xl px-4 py-16">
-      <h1 className="mb-2 text-4xl font-bold text-navy">Privacy Policy</h1>
-      <p className="mb-10 text-sm text-gray-500">Last updated: {LAST_UPDATED}</p>
+    <div className="mx-auto max-w-3xl px-4 py-12">
+      <h1 className="mb-2 text-3xl font-bold text-navy">Privacy Policy</h1>
+      <p className="mb-8 text-sm text-gray-500">Last updated: 1 January 2025</p>
 
-      <div className="space-y-10 text-gray-700">
-        {/* 1. Introduction */}
+      <div className="space-y-8 text-gray-700">
         <section>
-          <h2 className="mb-3 text-xl font-bold text-navy">1. Introduction</h2>
+          <h2 className="mb-3 text-xl font-semibold text-navy">
+            1. Introduction
+          </h2>
           <p>
-            Exotic Fruits (&quot;we&quot;, &quot;our&quot;, &quot;us&quot;) is
-            committed to protecting your personal information and your right to
-            privacy. This Privacy Policy explains how we collect, use, disclose,
-            and safeguard your information when you visit our website{' '}
-            <a href="https://exotic-fruits.com" className="text-gold hover:underline">
-              https://exotic-fruits.com
-            </a>{' '}
-            or make a purchase from us.
-          </p>
-          <p className="mt-3">
-            Please read this policy carefully. If you disagree with its terms,
-            please discontinue use of our site.
+            Exotic Fruits (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;)
+            is committed to protecting your personal information. This Privacy
+            Policy explains what data we collect, how we use it, and your rights
+            regarding that data when you use our website (
+            <strong>exoticfruits.in</strong>).
           </p>
         </section>
 
-        {/* 2. Data We Collect */}
         <section>
-          <h2 className="mb-3 text-xl font-bold text-navy">
-            2. Data We Collect
+          <h2 className="mb-3 text-xl font-semibold text-navy">
+            2. Information We Collect
           </h2>
-          <p>
-            We may collect personal information that you voluntarily provide to
-            us when you:
-          </p>
-          <ul className="mt-3 list-disc space-y-1 pl-6">
-            <li>Register for an account</li>
-            <li>Place an order</li>
-            <li>Contact us via our contact form</li>
-            <li>Subscribe to our newsletter</li>
-          </ul>
-          <p className="mt-3">
-            The personal information we may collect includes:
-          </p>
-          <ul className="mt-3 list-disc space-y-1 pl-6">
-            <li>Name, email address, phone number</li>
-            <li>Billing and delivery address</li>
-            <li>Payment information (processed securely via third-party providers)</li>
+          <ul className="list-disc space-y-2 pl-5">
             <li>
-              Device information, IP address, and browsing data via cookies
+              <strong>Account information:</strong> name, email address, and
+              password when you register.
+            </li>
+            <li>
+              <strong>Order information:</strong> delivery address, phone number,
+              and payment method details.
+            </li>
+            <li>
+              <strong>Usage data:</strong> pages visited, time spent on the site,
+              device type, and browser via cookies and analytics tools.
+            </li>
+            <li>
+              <strong>Communications:</strong> messages you send us via the
+              contact form or email.
             </li>
           </ul>
         </section>
 
-        {/* 3. How We Use Your Data */}
         <section>
-          <h2 className="mb-3 text-xl font-bold text-navy">
-            3. How We Use Your Data
+          <h2 className="mb-3 text-xl font-semibold text-navy">
+            3. How We Use Your Information
           </h2>
-          <p>We use the information we collect to:</p>
-          <ul className="mt-3 list-disc space-y-1 pl-6">
-            <li>Process and fulfil your orders</li>
-            <li>Send order confirmations and delivery updates</li>
-            <li>Respond to customer service requests</li>
-            <li>Send promotional communications (with your consent)</li>
-            <li>Improve our website and product offerings</li>
-            <li>Comply with legal obligations</li>
-          </ul>
-        </section>
-
-        {/* 4. Data Security */}
-        <section>
-          <h2 className="mb-3 text-xl font-bold text-navy">4. Data Security</h2>
-          <p>
-            We implement appropriate technical and organisational measures to
-            protect your personal data against accidental loss, unauthorised
-            access, alteration, and disclosure. All payment transactions are
-            encrypted using SSL technology.
-          </p>
-          <p className="mt-3">
-            However, no internet transmission or electronic storage is entirely
-            secure. While we strive to use commercially acceptable means to
-            protect your personal information, we cannot guarantee its absolute
-            security.
-          </p>
-        </section>
-
-        {/* 5. Changes to This Policy */}
-        <section>
-          <h2 className="mb-3 text-xl font-bold text-navy">
-            5. Changes to This Policy
-          </h2>
-          <p>
-            We may update this Privacy Policy from time to time. We will notify
-            you of any changes by posting the new Privacy Policy on this page
-            and updating the &quot;Last updated&quot; date. You are advised to
-            review this Privacy Policy periodically for any changes.
-          </p>
-        </section>
-
-        {/* 6. Your Rights */}
-        <section>
-          <h2 className="mb-3 text-xl font-bold text-navy">6. Your Rights</h2>
-          <p>You have the right to:</p>
-          <ul className="mt-3 list-disc space-y-1 pl-6">
-            <li>Access the personal data we hold about you</li>
-            <li>Request correction of inaccurate data</li>
-            <li>Request deletion of your personal data</li>
-            <li>Object to or restrict the processing of your data</li>
-            <li>Withdraw consent for marketing communications at any time</li>
-          </ul>
-          <p className="mt-3">
-            To exercise these rights, please contact us at the details below.
-          </p>
-        </section>
-
-        {/* 7. Contact Us */}
-        <section>
-          <h2 className="mb-3 text-xl font-bold text-navy">7. Contact Us</h2>
-          <p>
-            If you have questions or concerns about this Privacy Policy or our
-            data practices, please contact us:
-          </p>
-          <ul className="mt-3 space-y-1">
+          <ul className="list-disc space-y-2 pl-5">
+            <li>To process and fulfil your orders.</li>
+            <li>To send order confirmations and delivery updates.</li>
             <li>
-              Email:{' '}
-              <a
-                href="mailto:privacy@exoticfruits.com"
-                className="text-gold hover:underline"
-              >
-                privacy@exoticfruits.com
-              </a>
+              To improve our website, products, and customer experience.
             </li>
             <li>
-              Address: 123, Fruit Market Lane, Mumbai, Maharashtra 400001
+              To send promotional emails if you have opted in (you can
+              unsubscribe at any time).
             </li>
+            <li>To comply with legal obligations.</li>
           </ul>
+        </section>
+
+        <section>
+          <h2 className="mb-3 text-xl font-semibold text-navy">
+            4. Data Sharing
+          </h2>
+          <p>
+            We do not sell your personal information. We may share data with
+            trusted third-party service providers (e.g., payment processors,
+            logistics partners) solely to operate our business. These partners
+            are contractually obligated to keep your data confidential and secure.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="mb-3 text-xl font-semibold text-navy">5. Cookies</h2>
+          <p>
+            We use cookies to maintain your session, remember cart contents, and
+            analyse site traffic. You can control cookie settings through your
+            browser. Disabling cookies may affect some website functionality.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="mb-3 text-xl font-semibold text-navy">
+            6. Data Security
+          </h2>
+          <p>
+            We implement industry-standard security measures including HTTPS
+            encryption, secure password hashing, and regular security audits to
+            protect your data. However, no internet transmission is 100% secure,
+            and we cannot guarantee absolute security.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="mb-3 text-xl font-semibold text-navy">
+            7. Data Retention
+          </h2>
+          <p>
+            We retain your personal data for as long as your account is active or
+            as needed to provide services and comply with legal obligations. You
+            may request deletion of your account and associated data by contacting
+            us.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="mb-3 text-xl font-semibold text-navy">
+            8. Your Rights
+          </h2>
+          <ul className="list-disc space-y-2 pl-5">
+            <li>Access the personal data we hold about you.</li>
+            <li>Request correction of inaccurate data.</li>
+            <li>Request deletion of your personal data.</li>
+            <li>Opt out of marketing communications at any time.</li>
+            <li>Lodge a complaint with a data protection authority.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2 className="mb-3 text-xl font-semibold text-navy">
+            9. Children&apos;s Privacy
+          </h2>
+          <p>
+            Our services are not directed at children under the age of 13. We do
+            not knowingly collect personal information from children. If you
+            believe we have inadvertently collected such data, please contact us
+            immediately.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="mb-3 text-xl font-semibold text-navy">
+            10. Contact Us
+          </h2>
+          <p>
+            For privacy-related enquiries or to exercise your rights, please
+            contact our Data Protection Officer at{' '}
+            <a
+              href="mailto:privacy@exoticfruits.in"
+              className="text-navy underline hover:text-gold"
+            >
+              privacy@exoticfruits.in
+            </a>
+            .
+          </p>
         </section>
       </div>
     </div>

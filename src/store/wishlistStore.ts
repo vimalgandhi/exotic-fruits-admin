@@ -17,9 +17,7 @@ export const useWishlistStore = create<WishlistState>()(
       items: [],
       addItem: (product: Product) =>
         set((state) => {
-          if (state.items.find((item) => item.id === product.id)) {
-            return state
-          }
+          if (state.items.find((item) => item.id === product.id)) return state
           return { items: [...state.items, product] }
         }),
       removeItem: (productId: string) =>
@@ -29,9 +27,11 @@ export const useWishlistStore = create<WishlistState>()(
       toggleItem: (product: Product) => {
         const { items } = get()
         if (items.find((item) => item.id === product.id)) {
-          get().removeItem(product.id)
+          set((state) => ({
+            items: state.items.filter((item) => item.id !== product.id),
+          }))
         } else {
-          get().addItem(product)
+          set((state) => ({ items: [...state.items, product] }))
         }
       },
       isInWishlist: (productId: string) =>
