@@ -12,6 +12,26 @@
 }
 
 @layer components {
+  .slider-thumb {
+    pointer-events: none;
+  }
+  .slider-thumb::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    @apply h-5 w-5 cursor-pointer rounded-full shadow-md transition-shadow hover:shadow-lg;
+    pointer-events: auto;
+    background: #1A2B4B;
+    border: 2px solid #C9A84C;
+  }
+  .slider-thumb::-moz-range-thumb {
+    @apply h-5 w-5 cursor-pointer rounded-full shadow-md transition-shadow hover:shadow-lg;
+    pointer-events: auto;
+    background: #1A2B4B;
+    border: 2px solid #C9A84C;
+  }
+  .slider-thumb::-moz-range-track {
+    background: transparent;
+    border: none;
+  }
   .btn-primary {
     @apply rounded bg-navy px-4 py-2 font-medium text-white transition-colors hover:bg-blue-900 disabled:opacity-50;
   }

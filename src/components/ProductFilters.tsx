@@ -5,6 +5,8 @@ import { SlidersHorizontal, X } from 'lucide-react'
 import { useProductFilters } from '@/hooks/useProductFilters'
 
 const CATEGORIES = ['Tropical', 'Asian', 'Citrus', 'Berries']
+const PRICE_MIN = 0
+const PRICE_MAX = 1000
 
 function FiltersPanel({
   onClose,
@@ -14,17 +16,13 @@ function FiltersPanel({
   const { priceMin, priceMax, categories, updateFilters, clearFilters } =
     useProductFilters()
 
-  const [localMin, setLocalMin] = useState<string>(
-    priceMin !== null ? priceMin.toString() : '',
-  )
-  const [localMax, setLocalMax] = useState<string>(
-    priceMax !== null ? priceMax.toString() : '',
-  )
+  const [localMin, setLocalMin] = useState<number>(priceMin ?? PRICE_MIN)
+  const [localMax, setLocalMax] = useState<number>(priceMax ?? PRICE_MAX)
 
   // Sync local state when URL params change
   useEffect(() => {
-    setLocalMin(priceMin !== null ? priceMin.toString() : '')
-    setLocalMax(priceMax !== null ? priceMax.toString() : '')
+    setLocalMin(priceMin ?? PRICE_MIN)
+    setLocalMax(priceMax ?? PRICE_MAX)
   }, [priceMin, priceMax])
 
   const hasActiveFilters =
@@ -37,54 +35,94 @@ function FiltersPanel({
     updateFilters({ categories: next })
   }
 
-  const handlePriceApply = () => {
-    const minParsed = parseInt(localMin, 10)
-    const maxParsed = parseInt(localMax, 10)
-    const min = localMin !== '' && !Number.isNaN(minParsed) ? minParsed : null
-    const max = localMax !== '' && !Number.isNaN(maxParsed) ? maxParsed : null
-    updateFilters({ priceMin: min, priceMax: max })
-    onClose?.()
+  const handleMinChange = (value: number) => {
+    if (value < localMax) {
+      setLocalMin(value)
+      updateFilters({
+        priceMin: value === PRICE_MIN ? null : value,
+        priceMax: localMax === PRICE_MAX ? null : localMax,
+      })
+    }
+  }
+
+  const handleMaxChange = (value: number) => {
+    if (value > localMin) {
+      setLocalMax(value)
+      updateFilters({
+        priceMin: localMin === PRICE_MIN ? null : localMin,
+        priceMax: value === PRICE_MAX ? null : value,
+      })
+    }
   }
 
   const handleClear = () => {
-    setLocalMin('')
-    setLocalMax('')
+    setLocalMin(PRICE_MIN)
+    setLocalMax(PRICE_MAX)
     clearFilters()
     onClose?.()
   }
+
+  const minPercent = (localMin / PRICE_MAX) * 100
+  const maxPercent = (localMax / PRICE_MAX) * 100
 
   return (
     <div className="space-y-6">
       {/* Price Range */}
       <div>
         <h3 className="mb-3 font-semibold text-navy">Price Range (₹)</h3>
-        <div className="flex items-center gap-2">
-          <input
-            type="number"
-            placeholder="Min"
-            value={localMin}
-            onChange={(e) => setLocalMin(e.target.value)}
-            min={0}
-            aria-label="Minimum price"
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-navy focus:outline-none focus:ring-1 focus:ring-navy"
+
+        {/* Current value display */}
+        <div className="mb-4 flex justify-between text-sm font-semibold text-navy">
+          <span>₹{localMin}</span>
+          <span>₹{localMax}</span>
+        </div>
+
+        {/* Dual-handle slider */}
+        <div className="relative h-2 rounded-full bg-gray-300">
+          {/* Filled track between handles */}
+          <div
+            className="absolute h-full rounded-full bg-gold"
+            style={{
+              left: `${minPercent}%`,
+              right: `${100 - maxPercent}%`,
+            }}
           />
-          <span className="shrink-0 text-gray-400">–</span>
+
+          {/* Min range input */}
           <input
-            type="number"
-            placeholder="Max"
+            type="range"
+            min={PRICE_MIN}
+            max={PRICE_MAX}
+            value={localMin}
+            onChange={(e) => handleMinChange(parseInt(e.target.value, 10))}
+            aria-label="Minimum price"
+            className="slider-thumb absolute top-0 h-2 w-full appearance-none rounded-full bg-transparent"
+            style={{ zIndex: localMin > PRICE_MAX / 2 ? 5 : 3 }}
+          />
+
+          {/* Max range input */}
+          <input
+            type="range"
+            min={PRICE_MIN}
+            max={PRICE_MAX}
             value={localMax}
-            onChange={(e) => setLocalMax(e.target.value)}
-            min={0}
+            onChange={(e) => handleMaxChange(parseInt(e.target.value, 10))}
             aria-label="Maximum price"
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-navy focus:outline-none focus:ring-1 focus:ring-navy"
+            className="slider-thumb absolute top-0 h-2 w-full appearance-none rounded-full bg-transparent"
+            style={{ zIndex: localMax < PRICE_MAX / 2 ? 3 : 5 }}
           />
         </div>
-        <button
-          onClick={handlePriceApply}
-          className="mt-2 w-full rounded bg-navy px-3 py-1.5 text-sm text-white transition-colors hover:bg-blue-900"
-        >
-          Apply Price
-        </button>
+
+        {/* Range labels */}
+        <div className="mt-1 flex justify-between text-xs text-gray-500">
+          <span>₹{PRICE_MIN}</span>
+          <span>₹{PRICE_MAX}</span>
+        </div>
+
+        {/* Selected range summary */}
+        <div className="mt-3 text-center text-sm font-semibold text-navy">
+          Selected: ₹{localMin} – ₹{localMax}
+        </div>
       </div>
 
       {/* Category Checkboxes */}
