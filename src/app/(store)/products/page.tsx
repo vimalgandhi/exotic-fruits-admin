@@ -9,8 +9,9 @@ import { EmptyState } from "@/components/EmptyState";
 import { ProductFilters } from "@/components/ProductFilters";
 import { ProductSort } from "@/components/ProductSort";
 import { ProductPagination } from "@/components/ProductPagination";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, Heart } from "lucide-react";
 import { useCartStore } from "@/store/cartStore";
+import { useWishlist } from "@/hooks/useWishlist";
 import { toast } from "sonner";
 import { Product } from "@/types";
 import {
@@ -164,6 +165,7 @@ function ProductsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const addItem = useCartStore((s) => s.addItem);
+  const { toggleWishlist, isInWishlist } = useWishlist();
 
   // Parse URL params
   const search = searchParams.get("search") || "";
@@ -285,23 +287,44 @@ function ProductsContent() {
                     key={product.id}
                     className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
                   >
-                    <Link href={`/products/${product.slug}`}>
-                      <div className="relative h-48 overflow-hidden">
-                        <Image
-                          src={product.image}
-                          alt={product.name}
-                          fill
-                          className="object-cover transition-transform duration-300 hover:scale-105"
+                    <div className="relative">
+                      <Link href={`/products/${product.slug}`}>
+                        <div className="relative h-48 overflow-hidden">
+                          <Image
+                            src={product.image}
+                            alt={product.name}
+                            fill
+                            className="object-cover transition-transform duration-300 hover:scale-105"
+                          />
+                          {product.stock === "Out of Stock" && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                              <span className="rounded bg-white px-3 py-1 text-sm font-medium text-error">
+                                Out of Stock
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </Link>
+                      {/* Heart / wishlist button */}
+                      <button
+                        onClick={() => toggleWishlist(product)}
+                        aria-label={
+                          isInWishlist(product.id)
+                            ? "Remove from wishlist"
+                            : "Add to wishlist"
+                        }
+                        className="absolute right-2 top-2 rounded-full bg-white p-1.5 shadow transition-transform duration-300 hover:scale-110 active:scale-125"
+                      >
+                        <Heart
+                          size={18}
+                          className={
+                            isInWishlist(product.id)
+                              ? "fill-red-500 text-red-500"
+                              : "text-gray-400"
+                          }
                         />
-                        {product.stock === "Out of Stock" && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                            <span className="rounded bg-white px-3 py-1 text-sm font-medium text-error">
-                              Out of Stock
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </Link>
+                      </button>
+                    </div>
                     <div className="p-4">
                       <span className="text-xs font-medium text-gold">
                         {product.category}
