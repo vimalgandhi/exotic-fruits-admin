@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api
+
+Crawl-delay: 1
+
+Sitemap: https://exotic-fruits.com/sitemap.xml

@@ -21,6 +21,12 @@ function Footer() {
             <a href="/contact" className="hover:text-gold">
               Contact
             </a>
+            <a href="/terms" className="hover:text-gold">
+              Terms
+            </a>
+            <a href="/privacy" className="hover:text-gold">
+              Privacy
+            </a>
           </div>
           <p className="text-sm text-gray-400">
             © {new Date().getFullYear()} Exotic Fruits. All rights reserved.
