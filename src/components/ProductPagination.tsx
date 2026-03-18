@@ -57,7 +57,7 @@ export function ProductPagination({
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
             aria-label="Previous page"
-            className="flex items-center gap-1 rounded bg-navy px-3 py-2 text-sm text-white transition-opacity disabled:opacity-40 hover:bg-blue-900"
+            className="flex items-center gap-1 rounded bg-navy px-3 py-2 text-sm text-white transition-opacity disabled:opacity-40 disabled:hover:bg-navy hover:bg-blue-900"
           >
             <ChevronLeft size={16} />
             <span className="hidden sm:inline">Prev</span>
@@ -100,7 +100,7 @@ export function ProductPagination({
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
             aria-label="Next page"
-            className="flex items-center gap-1 rounded bg-navy px-3 py-2 text-sm text-white transition-opacity disabled:opacity-40 hover:bg-blue-900"
+            className="flex items-center gap-1 rounded bg-navy px-3 py-2 text-sm text-white transition-opacity disabled:opacity-40 disabled:hover:bg-navy hover:bg-blue-900"
           >
             <span className="hidden sm:inline">Next</span>
             <ChevronRight size={16} />

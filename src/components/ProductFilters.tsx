@@ -38,8 +38,10 @@ function FiltersPanel({
   }
 
   const handlePriceApply = () => {
-    const min = localMin !== '' ? parseInt(localMin) : null
-    const max = localMax !== '' ? parseInt(localMax) : null
+    const minParsed = parseInt(localMin, 10)
+    const maxParsed = parseInt(localMax, 10)
+    const min = localMin !== '' && !Number.isNaN(minParsed) ? minParsed : null
+    const max = localMax !== '' && !Number.isNaN(maxParsed) ? maxParsed : null
     updateFilters({ priceMin: min, priceMax: max })
     onClose?.()
   }

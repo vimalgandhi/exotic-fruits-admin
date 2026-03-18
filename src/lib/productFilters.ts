@@ -47,6 +47,9 @@ export function paginateProducts<T>(
   page: number,
   itemsPerPage: number,
 ): { items: T[]; totalPages: number; totalItems: number } {
+  if (itemsPerPage <= 0) {
+    throw new Error('itemsPerPage must be a positive number')
+  }
   const totalItems = products.length
   const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage))
   const safePage = Math.min(Math.max(1, page), totalPages)

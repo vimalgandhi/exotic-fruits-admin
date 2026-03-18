@@ -122,9 +122,14 @@ function ProductsContent() {
   // Parse URL params
   const search = searchParams.get('search') || ''
   const sort = (searchParams.get('sort') || 'newest') as SortOptionValue
-  const priceParam = searchParams.get('price')
-  const priceMin = priceParam ? parseInt(priceParam.split('-')[0]) || null : null
-  const priceMax = priceParam ? parseInt(priceParam.split('-')[1]) || null : null
+  const parseParam = (key: string): number | null => {
+    const val = searchParams.get(key)
+    if (val === null) return null
+    const n = parseInt(val, 10)
+    return Number.isNaN(n) ? null : n
+  }
+  const priceMin = parseParam('priceMin')
+  const priceMax = parseParam('priceMax')
   const categoryParam = searchParams.get('category')
   const selectedCategories = categoryParam
     ? categoryParam.split(',').filter(Boolean)

@@ -4,13 +4,18 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { useCallback } from 'react'
 import { ProductFilters } from '@/types'
 
+function parsePrice(s: string | null): number | null {
+  if (s === null) return null
+  const n = parseInt(s, 10)
+  return Number.isNaN(n) ? null : n
+}
+
 export function useProductFilters() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const priceParam = searchParams.get('price')
-  const priceMin = priceParam ? parseInt(priceParam.split('-')[0]) : null
-  const priceMax = priceParam ? parseInt(priceParam.split('-')[1]) : null
+  const priceMin = parsePrice(searchParams.get('priceMin'))
+  const priceMax = parsePrice(searchParams.get('priceMax'))
   const categoryParam = searchParams.get('category')
   const categories = categoryParam ? categoryParam.split(',').filter(Boolean) : []
 
@@ -18,15 +23,21 @@ export function useProductFilters() {
     (filters: Partial<ProductFilters>) => {
       const params = new URLSearchParams(searchParams.toString())
 
-      if ('priceMin' in filters || 'priceMax' in filters) {
-        const min =
-          filters.priceMin !== undefined ? filters.priceMin : priceMin
-        const max =
-          filters.priceMax !== undefined ? filters.priceMax : priceMax
-        if (min !== null || max !== null) {
-          params.set('price', `${min ?? ''}-${max ?? ''}`)
+      if ('priceMin' in filters) {
+        const min = filters.priceMin !== undefined ? filters.priceMin : priceMin
+        if (min !== null) {
+          params.set('priceMin', min.toString())
         } else {
-          params.delete('price')
+          params.delete('priceMin')
+        }
+      }
+
+      if ('priceMax' in filters) {
+        const max = filters.priceMax !== undefined ? filters.priceMax : priceMax
+        if (max !== null) {
+          params.set('priceMax', max.toString())
+        } else {
+          params.delete('priceMax')
         }
       }
 
@@ -47,7 +58,8 @@ export function useProductFilters() {
 
   const clearFilters = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString())
-    params.delete('price')
+    params.delete('priceMin')
+    params.delete('priceMax')
     params.delete('category')
     params.delete('page')
     router.push(`?${params.toString()}`)
