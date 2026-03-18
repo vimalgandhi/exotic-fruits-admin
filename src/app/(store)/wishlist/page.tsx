@@ -10,7 +10,7 @@ import { formatCurrency } from '@/lib/utils'
 import { toast } from 'sonner'
 
 export default function WishlistPage() {
-  const { items, removeItem } = useWishlistStore()
+  const { items, removeItem, clearWishlist } = useWishlistStore()
   const { addItem } = useCartStore()
 
   if (items.length === 0) {
@@ -31,9 +31,20 @@ export default function WishlistPage() {
     <div className="mx-auto max-w-5xl px-4 py-8">
       <div className="mb-8 flex items-center justify-between">
         <h1 className="text-3xl font-bold text-navy">My Wishlist</h1>
-        <span className="text-sm text-gray-500">
-          {items.length} item{items.length !== 1 ? 's' : ''}
-        </span>
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-gray-500">
+            {items.length} item{items.length !== 1 ? 's' : ''}
+          </span>
+          <button
+            onClick={() => {
+              clearWishlist()
+              toast.info('Wishlist cleared')
+            }}
+            className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-500 transition-colors hover:border-error hover:text-error"
+          >
+            Clear All
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

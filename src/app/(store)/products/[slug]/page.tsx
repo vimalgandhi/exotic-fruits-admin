@@ -3,8 +3,9 @@
 import { use, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ShoppingCart, ArrowLeft, Star, Truck, Shield } from 'lucide-react'
+import { ShoppingCart, ArrowLeft, Star, Truck, Shield, Heart } from 'lucide-react'
 import { useCartStore } from '@/store/cartStore'
+import { useWishlist } from '@/hooks/useWishlist'
 import { toast } from 'sonner'
 import { Product } from '@/types'
 import { notFound } from 'next/navigation'
@@ -122,6 +123,7 @@ export default function ProductDetailPage({
 
   const [quantity, setQuantity] = useState(1)
   const addItem = useCartStore((s) => s.addItem)
+  const { toggleWishlist, isInWishlist } = useWishlist()
 
   const handleAddToCart = () => {
     if (product.stock === 'Out of Stock') {
@@ -212,14 +214,34 @@ export default function ProductDetailPage({
           </div>
 
           {/* Add to Cart */}
-          <button
-            onClick={handleAddToCart}
-            disabled={product.stock === 'Out of Stock'}
-            className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-navy py-3 font-semibold text-white transition-colors hover:bg-blue-900 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <ShoppingCart size={20} />
-            Add to Cart
-          </button>
+          <div className="mt-6 flex gap-3">
+            <button
+              onClick={handleAddToCart}
+              disabled={product.stock === 'Out of Stock'}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-navy py-3 font-semibold text-white transition-colors hover:bg-blue-900 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <ShoppingCart size={20} />
+              Add to Cart
+            </button>
+            <button
+              onClick={() => toggleWishlist(product)}
+              aria-label={
+                isInWishlist(product.id)
+                  ? 'Remove from wishlist'
+                  : 'Add to wishlist'
+              }
+              className="rounded-lg border border-gray-300 px-4 py-3 transition-transform duration-300 hover:scale-110 active:scale-125 hover:border-red-400"
+            >
+              <Heart
+                size={22}
+                className={
+                  isInWishlist(product.id)
+                    ? 'fill-red-500 text-red-500'
+                    : 'text-gray-400'
+                }
+              />
+            </button>
+          </div>
 
           {/* Info */}
           <div className="mt-6 grid grid-cols-2 gap-4">

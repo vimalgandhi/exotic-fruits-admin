@@ -52,6 +52,23 @@ export interface CartItem {
   selectedUnit?: PriceListItem
 }
 
+export interface WishlistItem {
+  id: string
+  name: string
+  price: number
+  image: string
+  slug: string
+  category?: string
+}
+
+export interface WishlistStore {
+  items: WishlistItem[]
+  addToWishlist: (item: WishlistItem) => void
+  removeFromWishlist: (id: string) => void
+  isInWishlist: (id: string) => boolean
+  clearWishlist: () => void
+}
+
 export interface User {
   id: string
   name: string
