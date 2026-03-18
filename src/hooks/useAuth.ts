@@ -1,7 +1,7 @@
 import { useAuthStore } from '@/store/authStore'
 
 export function useAuth() {
-  const { user, isAuthenticated, loading, login, logout } = useAuthStore()
+  const { user, isAuthenticated, loading, login, logout, checkAuth } = useAuthStore()
 
   return {
     user,
@@ -9,5 +9,6 @@ export function useAuth() {
     loading,
     login,
     logout,
+    checkAuth,
   }
 }
