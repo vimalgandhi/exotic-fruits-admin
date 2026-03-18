@@ -114,15 +114,15 @@ function FiltersPanel({
         </div>
 
         {/* Range labels */}
-        <div className="mt-1 flex justify-between text-xs text-gray-500">
+        {/* <div className="mt-1 flex justify-between text-xs text-gray-500">
           <span>₹{PRICE_MIN}</span>
           <span>₹{PRICE_MAX}</span>
-        </div>
+        </div> */}
 
         {/* Selected range summary */}
-        <div className="mt-3 text-center text-sm font-semibold text-navy">
+        {/* <div className="mt-3 text-center text-sm font-semibold text-navy">
           Selected: ₹{localMin} – ₹{localMax}
-        </div>
+        </div> */}
       </div>
 
       {/* Category Checkboxes */}
