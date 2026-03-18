@@ -1,14 +1,16 @@
 'use client'
 
 import Link from 'next/link'
-import { ShoppingCart, Menu, X } from 'lucide-react'
+import { ShoppingCart, Heart, Menu, X } from 'lucide-react'
 import { useState } from 'react'
 import { UserDropdown } from './UserDropdown'
 import { useCart } from '@/hooks/useCart'
+import { useWishlistStore } from '@/store/wishlistStore'
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { itemCount } = useCart()
+  const wishlistCount = useWishlistStore((s) => s.items.length)
 
   return (
     <nav className="sticky top-0 z-40 border-b border-gray-200 bg-white shadow-sm">
@@ -33,10 +35,30 @@ export function Navbar() {
             >
               Products
             </Link>
+            <Link
+              href="/about"
+              className="text-sm font-medium text-gray-700 hover:text-gold"
+            >
+              About
+            </Link>
+            <Link
+              href="/contact"
+              className="text-sm font-medium text-gray-700 hover:text-gold"
+            >
+              Contact
+            </Link>
           </div>
 
           {/* Right Actions */}
           <div className="flex items-center gap-4">
+            <Link href="/wishlist" className="relative">
+              <Heart size={22} className="text-navy" />
+              {wishlistCount > 0 && (
+                <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-gold text-xs text-white">
+                  {wishlistCount}
+                </span>
+              )}
+            </Link>
             <Link href="/cart" className="relative">
               <ShoppingCart size={22} className="text-navy" />
               {itemCount > 0 && (
@@ -75,6 +97,20 @@ export function Navbar() {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Products
+              </Link>
+              <Link
+                href="/about"
+                className="text-sm font-medium text-gray-700"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                About
+              </Link>
+              <Link
+                href="/contact"
+                className="text-sm font-medium text-gray-700"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Contact
               </Link>
               <UserDropdown />
             </div>
