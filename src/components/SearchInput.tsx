@@ -2,7 +2,7 @@
 
 import { useDebounce } from '@/hooks/useDebounce'
 import { Search } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 interface SearchInputProps {
   placeholder?: string
@@ -19,10 +19,12 @@ export function SearchInput({
 }: SearchInputProps) {
   const [input, setInput] = useState(value)
   const debouncedValue = useDebounce(input, debounceMs)
+  const onChangeRef = useRef(onChange)
+  onChangeRef.current = onChange
 
   useEffect(() => {
-    onChange(debouncedValue)
-  }, [debouncedValue, onChange])
+    onChangeRef.current(debouncedValue)
+  }, [debouncedValue])
 
   useEffect(() => {
     setInput(value)
