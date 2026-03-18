@@ -73,3 +73,22 @@ export interface RouteRedirect {
   condition: string
   description: string
 }
+
+export interface ProductFilters {
+  priceMin: number | null
+  priceMax: number | null
+  categories: string[]
+}
+
+export type SortOptionValue =
+  | 'price-asc'
+  | 'price-desc'
+  | 'newest'
+  | 'popular'
+  | 'name-asc'
+  | 'name-desc'
+
+export interface SortOption {
+  value: SortOptionValue
+  label: string
+}
