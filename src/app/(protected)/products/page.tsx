@@ -10,6 +10,7 @@ import { getPriceRange } from "@/lib/utils/productUtils";
 import type { Product } from "@/types";
 import Button from "@/components/ui/button";
 import Table from "@/components/ui/table";
+import ConfirmDialog from "@/components/modals/confirm-dialog";
 
 export default function ProductsPage() {
   const router = useRouter();
@@ -17,6 +18,7 @@ export default function ProductsPage() {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [confirmState, setConfirmState] = useState<{ isOpen: boolean; id?: string; name?: string; isDeleting: boolean }>({ isOpen: false, isDeleting: false });
 
   // Filtered products
   const filtered = products.filter(
@@ -45,12 +47,21 @@ export default function ProductsPage() {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
+    setConfirmState({ isOpen: true, id, name, isDeleting: false });
+  };
+
+  const executeDelete = async () => {
+    const { id, name } = confirmState;
+    if (!id || !name) return;
+
+    setConfirmState((prev) => ({ ...prev, isDeleting: true }));
     try {
       await deleteProduct(id);
       toast.success(`"${name}" deleted successfully`);
+      setConfirmState({ isOpen: false, isDeleting: false });
     } catch {
       toast.error("Failed to delete product");
+      setConfirmState({ isOpen: false, isDeleting: false });
     }
   };
 
@@ -302,6 +313,15 @@ export default function ProductsPage() {
           </nav>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={confirmState.isOpen}
+        title="Delete Product"
+        message={`Are you sure you want to delete " ${confirmState.name} " ?`}
+        onConfirm={executeDelete}
+        onCancel={() => setConfirmState({ isOpen: false, isDeleting: false })}
+        isLoading={confirmState.isDeleting}
+      />
     </div>
   );
 }

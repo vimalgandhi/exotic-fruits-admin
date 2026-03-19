@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { getCategoryById, updateCategoryById, deleteAdminCategory } from '@/lib/api';
 import type { Category } from '@/types/category';
 import CategoryForm from '@/components/categories/CategoryForm';
+import ConfirmDialog from '@/components/modals/confirm-dialog';
 import { useParams } from 'next/navigation';
 
 export default function EditCategoryPage() {
@@ -13,6 +14,7 @@ export default function EditCategoryPage() {
   const router = useRouter();
   const [category, setCategory] = useState<Category | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [confirmState, setConfirmState] = useState<{ isOpen: boolean; isDeleting: boolean }>({ isOpen: false, isDeleting: false });
 
   useEffect(() => {
     async function fetchCategory() {
@@ -63,16 +65,18 @@ export default function EditCategoryPage() {
   };
 
   const handleDelete = async () => {
-    if (!confirm(`Are you sure you want to delete "${category.name}"?`)) return;
-    setIsLoading(true);
+    setConfirmState({ isOpen: true, isDeleting: false });
+  };
+
+  const executeDelete = async () => {
+    setConfirmState((prev) => ({ ...prev, isDeleting: true }));
     try {
       await deleteAdminCategory(id);
-      toast.success(`"${category.name}" deleted successfully`);
+      toast.success(`"${category?.name}" deleted successfully`);
       router.push('/categories');
     } catch {
       toast.error('Failed to delete category');
-    } finally {
-      setIsLoading(false);
+      setConfirmState({ isOpen: false, isDeleting: false });
     }
   };
 
@@ -91,6 +95,14 @@ export default function EditCategoryPage() {
         </button>
       </div>
       <CategoryForm category={category} onSubmit={handleSubmit} isLoading={isLoading} isFetching={isLoading} />
+      <ConfirmDialog
+        isOpen={confirmState.isOpen}
+        title="Delete Category"
+        message={`Are you sure you want to delete " ${category?.name} " ?`}
+        onConfirm={executeDelete}
+        onCancel={() => setConfirmState({ isOpen: false, isDeleting: false })}
+        isLoading={confirmState.isDeleting}
+      />
     </div>
   );
 }

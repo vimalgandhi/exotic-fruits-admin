@@ -47,11 +47,11 @@ export default function ProductForm({
 }: any) {
   const router = useRouter();
   const [pricingExpanded, setPricingExpanded] = useState(true);
-  const [image, setImage] = useState<File | null>(
-    product?.images?.[0] instanceof File ? product.images[0] : null,
+  const [imageValue, setImageValue] = useState<File | string | null>(
+    product?.images?.[0] || null,
   );
   const [priceList, setPriceList] = useState<PriceListItem[]>(
-    product?.pricelist ?? [],
+    Array.isArray(product?.pricelist) ? product.pricelist : [],
   );
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
@@ -100,12 +100,13 @@ export default function ProductForm({
     setImageError(null);
 
     // Validate image for new products
-    if (!product && !image) {
+    if (!product && !imageValue) {
       setImageError("Product image is required");
       toast.error("Please upload a product image");
       return;
     }
-
+    console.log(`Received category_id: ${values.categoryId}`);
+    
     const formData = new FormData();
     formData.append("name", values.name);
     formData.append("slug", values.slug);
@@ -126,8 +127,8 @@ export default function ProductForm({
     formData.append("seoCanonical", values.seoCanonical || "");
     formData.append("seoSchemaJson", values.seoSchemaJson || "");
     // Always append image if present and is File
-    if (image) {
-      formData.append("image", image);
+    if (imageValue && imageValue instanceof File) {
+      formData.append("image", imageValue);
     }
 
     try {
@@ -194,7 +195,7 @@ export default function ProductForm({
       )}
 
       {/* Basic Information */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-2 md:p-6 space-y-4">
         <h2 className="text-base font-semibold text-gray-900">
           Basic Information
         </h2>
@@ -263,7 +264,7 @@ export default function ProductForm({
             >
               <option value="">Select category...</option>
               {categories.map((cat: any) => (
-                <option key={cat.id} value={cat.id}>
+                <option key={cat.id} value={String(cat.id)}>
                   {cat.name}
                 </option>
               ))}
@@ -278,7 +279,7 @@ export default function ProductForm({
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Status <span className="text-red-500">*</span>
-            </label>
+            </label>  
             <select
               className={`block w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors ${
                 errors.status
@@ -343,9 +344,9 @@ export default function ProductForm({
             Product Image {!product && <span className="text-red-500">*</span>}
           </label>
           <ImageUpload
-            value={image}
+            value={imageValue instanceof File ? imageValue : (typeof imageValue === 'string' ? imageValue : null)}
             onChange={(file: any) => {
-              setImage(file instanceof File ? file : null);
+              setImageValue(file instanceof File ? file : null);
               setImageError(null);
             }}
             preview
