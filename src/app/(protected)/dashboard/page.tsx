@@ -6,8 +6,6 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 
 export default function DashboardPage() {
   const { stats, loading } = useAdminDashboard();
-  console.log(stats, 'stats');
-  
   const statCards = [
     {
       label: 'Total Products',

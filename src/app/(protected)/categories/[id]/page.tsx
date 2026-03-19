@@ -19,7 +19,6 @@ export default function EditCategoryPage() {
       setIsLoading(true);
       try {
         const data : any = await getCategoryById(id);
-        console.log(data);
         setCategory(data.data as Category);
       } catch {
         toast.error('Failed to fetch category');

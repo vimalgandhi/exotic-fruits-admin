@@ -131,7 +131,6 @@ export default function ProductForm({
     }
 
     try {
-      console.log("Submitting form with FormData");
       await onSubmit(formData as any);
     } catch (err: any) {
       console.error("ProductForm submission error:", err);
