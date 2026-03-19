@@ -1,5 +1,21 @@
 export const AUTH_SESSION_KEY = 'auth_session';
 export const AUTH_USER_KEY = 'auth_user';
+export const AUTH_TOKEN_KEY = 'auth_token';
+
+export function getToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(AUTH_TOKEN_KEY);
+}
+
+export function setToken(token: string): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(AUTH_TOKEN_KEY, token);
+}
+
+export function removeToken(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(AUTH_TOKEN_KEY);
+}
 
 /**
  * Sets a simple session presence cookie so the middleware can detect
@@ -41,4 +57,5 @@ export function removeStoredUser(): void {
 export function clearAuth(): void {
   clearSession();
   removeStoredUser();
+  removeToken();
 }

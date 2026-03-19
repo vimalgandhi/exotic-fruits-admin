@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getToken } from './auth';
 import { logger } from './logger';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
@@ -11,6 +12,10 @@ export const apiClient = axios.create({
 });
 
 apiClient.interceptors.request.use((config) => {
+  const token = getToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
 
@@ -33,9 +38,14 @@ apiClient.interceptors.response.use(
 
 export default apiClient;
 
-// Helper function to get common request headers
+// Helper function to get common request headers, with optional token
 function getAuthHeaders(): Record<string, string> {
-  return { 'Content-Type': 'application/json' };
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const token = getToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  return headers;
 }
 
 // Helper function to handle API responses
