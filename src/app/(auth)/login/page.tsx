@@ -84,12 +84,6 @@ export default function LoginPage() {
               Sign In
             </Button>
           </form>
-
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <p className="text-xs text-gray-500 font-medium mb-1">Demo Credentials:</p>
-            <p className="text-xs text-gray-600">Email: admin@exoticfruits.com</p>
-            <p className="text-xs text-gray-600">Password: admin123</p>
-          </div>
         </div>
       </div>
     </div>
