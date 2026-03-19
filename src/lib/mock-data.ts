@@ -80,7 +80,6 @@ export const MOCK_PRODUCTS: Product[] = [
       {
         unitId: 1,
         unitName: '400g',
-        unitValue: '400',
         unitPrice: 8.99,
         discountType: 'Percentage',
         discount: '10',
@@ -92,7 +91,6 @@ export const MOCK_PRODUCTS: Product[] = [
       {
         unitId: 2,
         unitName: '600g',
-        unitValue: '600',
         unitPrice: 12.99,
         discountType: 'Fixed',
         discount: '1',
@@ -124,7 +122,6 @@ export const MOCK_PRODUCTS: Product[] = [
       {
         unitId: 3,
         unitName: '500g',
-        unitValue: '500',
         unitPrice: 12.99,
         discountType: 'Percentage',
         discount: '5',
@@ -175,7 +172,6 @@ export const MOCK_PRODUCTS: Product[] = [
       {
         unitId: 4,
         unitName: '300g',
-        unitValue: '300',
         unitPrice: 9.99,
         discountType: 'Percentage',
         discount: '0',
@@ -208,7 +204,6 @@ export const MOCK_PRODUCTS: Product[] = [
       {
         unitId: 5,
         unitName: '400g',
-        unitValue: '400',
         unitPrice: 6.99,
         discountType: 'Fixed',
         discount: '1.5',
@@ -220,7 +215,6 @@ export const MOCK_PRODUCTS: Product[] = [
       {
         unitId: 6,
         unitName: '800g',
-        unitValue: '800',
         unitPrice: 13.99,
         discountType: 'Percentage',
         discount: '15',

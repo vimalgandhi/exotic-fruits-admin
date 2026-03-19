@@ -1,22 +1,43 @@
 'use client';
-
-import { use } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { useCategories } from '@/hooks/useCategories';
+import { getCategoryById, updateCategoryById, deleteAdminCategory } from '@/lib/api';
 import type { Category } from '@/types/category';
 import CategoryForm from '@/components/categories/CategoryForm';
+import ConfirmDialog from '@/components/modals/confirm-dialog';
+import { useParams } from 'next/navigation';
 
-interface EditCategoryPageProps {
-  params: Promise<{ id: string }>;
-}
-
-export default function EditCategoryPage({ params }: EditCategoryPageProps) {
-  const { id } = use(params);
+export default function EditCategoryPage() {
+  const params = useParams();
+  const id = typeof params.id === 'string' ? params.id : Array.isArray(params.id) ? params.id[0] : '';
   const router = useRouter();
-  const { categories, updateCategory, deleteCategory, isLoading } = useCategories();
+  const [category, setCategory] = useState<Category | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [confirmState, setConfirmState] = useState<{ isOpen: boolean; isDeleting: boolean }>({ isOpen: false, isDeleting: false });
 
-  const category = categories.find((c) => c.id === id);
+  useEffect(() => {
+    async function fetchCategory() {
+      setIsLoading(true);
+      try {
+        const data : any = await getCategoryById(id);
+        setCategory(data.data as Category);
+      } catch {
+        toast.error('Failed to fetch category');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchCategory();
+  }, [id]);
+
+  if (isLoading) {
+    return (
+      <div className="max-w-2xl mx-auto text-center py-20">
+        <p className="text-gray-500 text-lg">Loading category...</p>
+      </div>
+    );
+  }
 
   if (!category) {
     return (
@@ -32,24 +53,30 @@ export default function EditCategoryPage({ params }: EditCategoryPageProps) {
     );
   }
 
-  const handleSubmit = async (data: Omit<Category, 'id' | 'createdAt' | 'updatedAt' | 'productCount'>) => {
+  const handleSubmit = async (formData: FormData) => {
     try {
-      await updateCategory(id, data);
-      toast.success(`"${data.name}" updated successfully`);
+      await updateCategoryById(id, formData);
+      toast.success('Category updated successfully');
       router.push('/categories');
-    } catch {
-      toast.error('Failed to update category');
+    } catch (error) {
+      // Re-throw so form component can catch and display
+      throw error;
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm(`Are you sure you want to delete "${category.name}"?`)) return;
+    setConfirmState({ isOpen: true, isDeleting: false });
+  };
+
+  const executeDelete = async () => {
+    setConfirmState((prev) => ({ ...prev, isDeleting: true }));
     try {
-      await deleteCategory(id);
-      toast.success(`"${category.name}" deleted successfully`);
+      await deleteAdminCategory(id);
+      toast.success(`"${category?.name}" deleted successfully`);
       router.push('/categories');
     } catch {
       toast.error('Failed to delete category');
+      setConfirmState({ isOpen: false, isDeleting: false });
     }
   };
 
@@ -57,8 +84,8 @@ export default function EditCategoryPage({ params }: EditCategoryPageProps) {
     <div className="max-w-2xl mx-auto space-y-4">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Edit Category</h1>
-          <p className="text-gray-500 mt-1">Update the details for &ldquo;{category.name}&rdquo;</p>
+          <h1 className="text-2xl font-bold text-gray-900">Edit Category for {category.name}</h1>
+          {/* <p className="text-gray-500 mt-1">Update the details for &ldquo;{category.name}&rdquo;</p> */}
         </div>
         <button
           onClick={handleDelete}
@@ -67,7 +94,15 @@ export default function EditCategoryPage({ params }: EditCategoryPageProps) {
           Delete
         </button>
       </div>
-      <CategoryForm category={category} onSubmit={handleSubmit} isLoading={isLoading} />
+      <CategoryForm category={category} onSubmit={handleSubmit} isLoading={isLoading} isFetching={isLoading} />
+      <ConfirmDialog
+        isOpen={confirmState.isOpen}
+        title="Delete Category"
+        message={`Are you sure you want to delete " ${category?.name} " ?`}
+        onConfirm={executeDelete}
+        onCancel={() => setConfirmState({ isOpen: false, isDeleting: false })}
+        isLoading={confirmState.isDeleting}
+      />
     </div>
   );
 }

@@ -1,23 +1,37 @@
-export const AUTH_TOKEN_KEY = 'auth_token';
+export const AUTH_SESSION_KEY = 'auth_session';
 export const AUTH_USER_KEY = 'auth_user';
+export const AUTH_TOKEN_KEY = 'auth_token';
 
 export function getToken(): string | null {
-  if (typeof document === 'undefined') return null;
-  const match = document.cookie.match(new RegExp('(^| )' + AUTH_TOKEN_KEY + '=([^;]+)'));
-  return match ? match[2] : null;
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(AUTH_TOKEN_KEY);
 }
 
-export function setToken(token: string, days = 7): void {
+export function setToken(token: string): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(AUTH_TOKEN_KEY, token);
+}
+
+export function removeToken(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(AUTH_TOKEN_KEY);
+}
+
+/**
+ * Sets a simple session presence cookie so the middleware can detect
+ * whether a user is currently logged in — no secret value is carried.
+ */
+export function setSession(days = 7): void {
   if (typeof document === 'undefined') return;
   const expires = new Date();
   expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
   const secure = location.protocol === 'https:' ? ';Secure' : '';
-  document.cookie = `${AUTH_TOKEN_KEY}=${token};expires=${expires.toUTCString()};path=/;SameSite=Strict${secure}`;
+  document.cookie = `${AUTH_SESSION_KEY}=1;expires=${expires.toUTCString()};path=/;SameSite=Strict${secure}`;
 }
 
-export function removeToken(): void {
+export function clearSession(): void {
   if (typeof document === 'undefined') return;
-  document.cookie = `${AUTH_TOKEN_KEY}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
+  document.cookie = `${AUTH_SESSION_KEY}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
 }
 
 export function getStoredUser<T>(): T | null {
@@ -41,6 +55,7 @@ export function removeStoredUser(): void {
 }
 
 export function clearAuth(): void {
-  removeToken();
+  clearSession();
   removeStoredUser();
+  removeToken();
 }

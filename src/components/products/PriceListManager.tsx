@@ -13,7 +13,6 @@ interface PriceListManagerProps {
 
 const EMPTY_ITEM: Omit<PriceListItem, 'unitId' | 'createdon' | 'updatedon'> = {
   unitName: '',
-  unitValue: '',
   unitPrice: 0,
   discountType: 'Percentage',
   discount: '0',
@@ -36,7 +35,6 @@ export default function PriceListManager({ items, onChange }: PriceListManagerPr
     return {
       unitId: partial.unitId ?? Date.now(),
       unitName: partial.unitName ?? '',
-      unitValue: partial.unitValue ?? '',
       unitPrice,
       discountType,
       discount,
@@ -115,7 +113,6 @@ export default function PriceListManager({ items, onChange }: PriceListManagerPr
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <div className="flex items-center gap-3 flex-wrap">
                 <span className="font-medium text-gray-900 text-sm">{item.unitName}</span>
-                <span className="text-xs text-gray-500">({item.unitValue})</span>
                 <span className="text-sm text-gray-700">₹{item.unitPrice.toFixed(2)}</span>
                 <span className="text-xs px-1.5 py-0.5 rounded bg-blue-50 text-blue-700">
                   {item.discountType === 'Percentage'
@@ -201,18 +198,12 @@ interface ItemEditorProps {
 function ItemEditor({ value, onChange, onSave, onCancel }: ItemEditorProps) {
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         <Input
           label="Unit Name"
           placeholder="e.g. 400g"
           value={value.unitName ?? ''}
           onChange={(e) => onChange('unitName', e.target.value)}
-        />
-        <Input
-          label="Unit Value"
-          placeholder="e.g. 400"
-          value={value.unitValue ?? ''}
-          onChange={(e) => onChange('unitValue', e.target.value)}
         />
         <Input
           label="Unit Price"

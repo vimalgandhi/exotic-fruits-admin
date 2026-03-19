@@ -12,12 +12,6 @@ export interface SeoFormFields {
   seoIndex?: boolean;
   seoFollow?: boolean;
   seoCanonical?: string;
-  seoOgTitle?: string;
-  seoOgDescription?: string;
-  seoOgImage?: string;
-  seoTwitterTitle?: string;
-  seoTwitterDescription?: string;
-  seoTwitterImage?: string;
   seoSchemaJson?: string;
 }
 
@@ -102,62 +96,6 @@ export default function SeoSection({ register, errors }: SeoSectionProps) {
                   <span className="text-sm text-gray-700">Follow</span>
                 </label>
               </div>
-            </div>
-          </div>
-
-          {/* Open Graph */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Open Graph (OG)</h3>
-            <div className="space-y-3">
-              <Input
-                label="OG Title"
-                placeholder="Title for social sharing"
-                {...register('seoOgTitle')}
-              />
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  OG Description
-                </label>
-                <textarea
-                  rows={2}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Description for social sharing"
-                  {...register('seoOgDescription')}
-                />
-              </div>
-              <Input
-                label="OG Image URL"
-                placeholder="https://example.com/og-image.jpg"
-                {...register('seoOgImage')}
-              />
-            </div>
-          </div>
-
-          {/* Twitter Card */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Twitter Card</h3>
-            <div className="space-y-3">
-              <Input
-                label="Twitter Title"
-                placeholder="Title for Twitter"
-                {...register('seoTwitterTitle')}
-              />
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Twitter Description
-                </label>
-                <textarea
-                  rows={2}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Description for Twitter"
-                  {...register('seoTwitterDescription')}
-                />
-              </div>
-              <Input
-                label="Twitter Image URL"
-                placeholder="https://example.com/twitter-image.jpg"
-                {...register('seoTwitterImage')}
-              />
             </div>
           </div>
 

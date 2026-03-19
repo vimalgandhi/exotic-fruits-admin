@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from 'sonner';
 
 export const metadata: Metadata = {
-  title: 'Exotic Fruits Admin',
+  title: 'Admin',
   description: 'Admin panel for Exotic Fruits e-commerce platform',
 };
 
