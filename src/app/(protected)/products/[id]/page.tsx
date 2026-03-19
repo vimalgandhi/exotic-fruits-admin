@@ -34,13 +34,14 @@ export default function EditProductPage({ params }: EditProductPageProps) {
     );
   }
 
-  const handleSubmit = async (data: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const handleSubmit = async (formData: FormData) => {
     try {
-      await updateProduct(id, data);
+      await updateProduct(id, formData);
       toast.success('Product updated successfully');
       router.push('/products');
-    } catch {
-      toast.error('Failed to update product');
+    } catch (error) {
+      // Re-throw so form component can catch and display
+      throw error;
     }
   };
 

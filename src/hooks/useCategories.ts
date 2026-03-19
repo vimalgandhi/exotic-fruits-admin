@@ -29,16 +29,17 @@ export function useCategories() {
     }
   }, []);
 
-  const createCategory = useCallback(async (data: Omit<Category, 'id' | 'createdAt' | 'updatedAt' | 'productCount'>) => {
+  const createCategory = useCallback(async (formData: FormData) => {
     setIsLoading(true);
     try {
-      const response = await apiClient.post<{ data: Category }>('/categories', data);
+      const response = await apiClient.post<{ data: Category }>('/categories', formData);
       const newCategory = response.data.data;
       setCategories((prev) => [newCategory, ...prev]);
       return newCategory;
-    } catch (err) {
-      logger.error('useCategories/createCategory', 'Failed to create category', err);
-      throw new Error('Failed to create category');
+    } catch (err: any) {
+      const errorMessage = err?.message || 'Failed to create category';
+      logger.error('useCategories/createCategory', errorMessage, err);
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -50,9 +51,10 @@ export function useCategories() {
       const response = await apiClient.put<{ data: Category }>(`/categories/${id}`, data);
       const updated = response.data.data;
       setCategories((prev) => prev.map((c) => (c.id === id ? updated : c)));
-    } catch (err) {
-      logger.error('useCategories/updateCategory', `Failed to update category id=${id}`, err);
-      throw new Error('Failed to update category');
+    } catch (err: any) {
+      const errorMessage = err?.message || `Failed to update category id=${id}`;
+      logger.error('useCategories/updateCategory', errorMessage, err);
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }

@@ -90,7 +90,7 @@ export default function Sidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          'flex flex-col w-64 bg-gray-900 text-white transition-transform duration-300 ease-in-out',
+          'flex flex-col w-25 bg-gray-900 text-white transition-transform duration-300 ease-in-out',
           // Desktop: side-by-side, normal flow
           'md:relative md:min-h-screen md:translate-x-0',
           // Mobile: fixed overlay, slide in/out

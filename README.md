@@ -1,4 +1,4 @@
-# Exotic Fruits Admin Panel
+# Admin Panel
 
 A modern admin panel for the Exotic Fruits e-commerce platform built with Next.js 16, TypeScript, and Tailwind CSS.
 
@@ -42,7 +42,7 @@ Create a `.env.local` file:
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:3001/api
-NEXT_PUBLIC_APP_NAME=Exotic Fruits Admin
+NEXT_PUBLIC_APP_NAME=Admin
 ```
 
 ### 3. Run the development server

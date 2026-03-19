@@ -1,5 +1,5 @@
 /**
- * Centralized logger for the Exotic Fruits Admin application.
+ * Centralized logger for the Admin application.
  *
  * Usage:
  *   import { logger } from '@/lib/logger';

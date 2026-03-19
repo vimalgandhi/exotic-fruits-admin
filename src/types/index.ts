@@ -21,7 +21,6 @@ export interface LoginCredentials {
 export interface PriceListItem {
   unitId: number;
   unitName: string;
-  unitValue: string;
   unitPrice: number;
   discountType: 'Percentage' | 'Fixed';
   discount: string;
@@ -121,8 +120,8 @@ export interface TableColumn<T> {
 }
 
 export interface ImageUploadProps {
-  value?: string;
-  onChange: (base64: string) => void;
+  value?: File | string | null;
+  onChange: any;
   maxSize?: number;
   accept?: string;
   preview?: boolean;

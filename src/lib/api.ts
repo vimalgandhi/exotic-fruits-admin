@@ -1,3 +1,21 @@
+// Get category by ID
+export async function getCategoryById(id: string) {
+  const response = await fetch(`${API_URL}/categories/${id}`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse(response);
+}
+
+// Update category by ID (FormData)
+export async function updateCategoryById(id: string, formData: FormData) {
+  const { 'Content-Type': _ct, ...headersWithoutContentType } = getAuthHeaders();
+  const response = await fetch(`${API_URL}/categories/${id}`, {
+    method: 'PUT',
+    headers: headersWithoutContentType,
+    body: formData,
+  });
+  return handleResponse(response);
+}
 import axios from 'axios';
 import { getToken } from './auth';
 import { logger } from './logger';
@@ -6,9 +24,6 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
 
 export const apiClient = axios.create({
   baseURL: BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 apiClient.interceptors.request.use((config) => {
@@ -16,15 +31,20 @@ apiClient.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  // Only set Content-Type for non-FormData requests
+  if (!(config.data instanceof FormData)) {
+    config.headers['Content-Type'] = 'application/json';
+  }
   return config;
 });
 
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    const errorMessage = error?.response?.data?.message || error?.message || 'API request failed';
     logger.error(
       'apiClient',
-      `HTTP ${error.response?.status ?? 'network'} error`,
+      `HTTP ${error.response?.status ?? 'network'} error: ${errorMessage}`,
       error,
     );
     if (error.response?.status === 401) {
@@ -32,7 +52,8 @@ apiClient.interceptors.response.use(
         window.location.href = '/login';
       }
     }
-    return Promise.reject(error);
+    const customError = new Error(errorMessage);
+    return Promise.reject(customError);
   }
 );
 

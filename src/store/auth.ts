@@ -32,12 +32,12 @@ export const useAuthStore = create<AuthStore>((set) => ({
       let token: string | null = null;
 
       try {
-        const response = await apiClient.post<{ data: { user: User; token?: string } }>(
+        const response = await apiClient.post<{ data: { user: User; accessToken?: string } }>(
           '/auth/login',
           credentials
         );
         user = response.data.data.user;
-        token = response.data.data.token ?? null;
+        token = response.data.data.accessToken ?? null;
         logger.info('auth/login', 'Login successful via API', { email: credentials.email });
       } catch (apiErr) {
         // Fall back to mock credentials when the backend is not available

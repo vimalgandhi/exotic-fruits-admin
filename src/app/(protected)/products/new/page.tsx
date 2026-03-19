@@ -12,13 +12,14 @@ export default function NewProductPage() {
   const { createProduct, isLoading } = useProducts();
   const { categories } = useCategories();
 
-  const handleSubmit = async (data: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const handleSubmit = async (formData: FormData) => {
     try {
-      await createProduct(data);
+      await createProduct(formData);
       toast.success('Product created successfully');
       router.push('/products');
-    } catch {
-      toast.error('Failed to create product');
+    } catch (error) {
+      // Re-throw so form component can catch and display
+      throw error;
     }
   };
 

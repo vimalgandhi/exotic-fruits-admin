@@ -64,14 +64,14 @@ export default function CategoryList({
         <span className="text-gray-600 text-sm">{String(val ?? "—")}</span>
       ),
     },
-    { key: "productCount", header: "Products" },
+    // { key: "productCount", header: "Products" },
     {
       key: "status",
       header: "Status",
       render: (val: unknown) => (
         <span
           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-            val === "active"
+            val === "Active"
               ? "bg-green-100 text-green-800"
               : "bg-gray-100 text-gray-800"
           }`}
@@ -170,7 +170,6 @@ export default function CategoryList({
                   &#8592; Previous
                 </button>
               </li>
-              {/* Page numbers with ellipsis */}
               {(() => {
                 const pages = [];
                 if (totalPages <= 7) {
@@ -191,7 +190,6 @@ export default function CategoryList({
                     );
                   }
                 } else {
-                  // Always show first page
                   pages.push(
                     <li key={1}>
                       <button
@@ -206,7 +204,6 @@ export default function CategoryList({
                       </button>
                     </li>,
                   );
-                  // Show ellipsis if needed
                   if (currentPage > 4) {
                     pages.push(
                       <li key="start-ellipsis" className="px-2">
@@ -214,7 +211,6 @@ export default function CategoryList({
                       </li>,
                     );
                   }
-                  // Show pages around current
                   for (
                     let i = Math.max(2, currentPage - 2);
                     i <= Math.min(totalPages - 1, currentPage + 2);
@@ -235,7 +231,6 @@ export default function CategoryList({
                       </li>,
                     );
                   }
-                  // Show ellipsis if needed
                   if (currentPage < totalPages - 3) {
                     pages.push(
                       <li key="end-ellipsis" className="px-2">
@@ -243,7 +238,6 @@ export default function CategoryList({
                       </li>,
                     );
                   }
-                  // Always show last page
                   pages.push(
                     <li key={totalPages}>
                       <button

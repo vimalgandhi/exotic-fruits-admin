@@ -3,20 +3,20 @@
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useCategories } from '@/hooks/useCategories';
-import type { Category } from '@/types/category';
 import CategoryForm from '@/components/categories/CategoryForm';
 
 export default function NewCategoryPage() {
   const router = useRouter();
   const { createCategory, isLoading } = useCategories();
 
-  const handleSubmit = async (data: Omit<Category, 'id' | 'createdAt' | 'updatedAt' | 'productCount'>) => {
+  const handleSubmit = async (formData: FormData) => {
     try {
-      await createCategory(data);
-      toast.success(`"${data.name}" created successfully`);
+      await createCategory(formData);
+      toast.success('Category created successfully');
       router.push('/categories');
-    } catch {
-      toast.error('Failed to create category');
+    } catch (error) {
+      // Re-throw so form component can catch and display
+      throw error;
     }
   };
 

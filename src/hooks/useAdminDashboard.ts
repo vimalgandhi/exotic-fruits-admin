@@ -1,15 +1,17 @@
-import { useState, useEffect, useCallback } from 'react';
-import { getDashboardStats, getAnalyticsData } from '@/lib/api';
-import { logger } from '@/lib/logger';
+import { useState, useEffect, useCallback } from "react";
+import { getDashboardStats, getAnalyticsData } from "@/lib/api";
+import { logger } from "@/lib/logger";
 
 interface DashboardStats {
-  totalRevenue: number;
-  totalOrders: number;
-  totalProducts: number;
-  totalUsers: number;
+  stats: {
+    totalRevenue: number;
+    totalOrders: number;
+    totalProducts: number;
+    totalUsers: number;
+    salesData: unknown[];
+    topProducts: unknown[];
+  };
   recentOrders: unknown[];
-  salesData: unknown[];
-  topProducts: unknown[];
 }
 
 export function useAdminDashboard() {
@@ -24,8 +26,9 @@ export function useAdminDashboard() {
       setStats(data.data);
       setError(null);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to fetch dashboard stats';
-      logger.error('useAdminDashboard/fetchDashboardStats', message, err);
+      const message =
+        err instanceof Error ? err.message : "Failed to fetch dashboard stats";
+      logger.error("useAdminDashboard/fetchDashboardStats", message, err);
       setError(message);
       setStats(null);
     } finally {
@@ -39,11 +42,19 @@ export function useAdminDashboard() {
 
   const getAnalytics = async (startDate: string, endDate: string) => {
     try {
-      const data = (await getAnalyticsData(startDate, endDate)) as { data: unknown };
+      const data = (await getAnalyticsData(startDate, endDate)) as {
+        data: unknown;
+      };
       return data.data;
     } catch (err) {
-      logger.error('useAdminDashboard/getAnalytics', 'Failed to fetch analytics data', err);
-      throw new Error(err instanceof Error ? err.message : 'Failed to fetch analytics');
+      logger.error(
+        "useAdminDashboard/getAnalytics",
+        "Failed to fetch analytics data",
+        err,
+      );
+      throw new Error(
+        err instanceof Error ? err.message : "Failed to fetch analytics",
+      );
     }
   };
 

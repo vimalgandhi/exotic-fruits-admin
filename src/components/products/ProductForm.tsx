@@ -1,149 +1,204 @@
-'use client';
+"use client";
 
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Save, ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { slugify } from '@/lib/utils';
-import type { Product, PriceListItem, Category } from '@/types';
-import Button from '@/components/ui/button';
-import Input from '@/components/ui/input';
-import ImageUpload from '@/components/ui/ImageUpload';
-import PriceListManager from '@/components/products/PriceListManager';
-import SeoSection from '@/components/products/SeoSection';
+import { useForm } from "react-hook-form";
+import {
+  Save,
+  ArrowLeft,
+  ChevronDown,
+  ChevronUp,
+  AlertCircle,
+  X,
+} from "lucide-react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { slugify } from "@/lib/utils";
+import { toast } from "sonner";
+import type { Product, PriceListItem, Category } from "@/types";
+import Button from "@/components/ui/button";
+import Input from "@/components/ui/input";
+import ImageUpload from "@/components/ui/ImageUpload";
+import PriceListManager from "@/components/products/PriceListManager";
+import SeoSection from "@/components/products/SeoSection";
 
-const productSchema = z.object({
-  name: z.string().min(1, 'Product name is required'),
-  slug: z.string().min(1, 'Slug is required'),
-  description: z.string().min(1, 'Description is required'),
-  price: z.coerce.number().min(0, 'Price must be a positive number'),
-  salePrice: z.coerce.number().min(0).optional().or(z.literal('')),
-  stock: z.coerce.number().int().min(0, 'Stock must be a non-negative integer'),
-  categoryId: z.string().min(1, 'Category is required'),
-  originCountry: z.string().optional(),
-  foodType: z.string().optional(),
-  stockStatus: z.enum(['In Stock', 'Out Stock', 'Out of Stock']).optional(),
-  status: z.enum(['active', 'inactive', 'draft']),
-  featured: z.boolean().optional(),
-  // SEO fields
-  seoMetaTitle: z.string().optional(),
-  seoMetaDescription: z.string().optional(),
-  seoAlt: z.string().optional(),
-  seoIndex: z.boolean().optional(),
-  seoFollow: z.boolean().optional(),
-  seoCanonical: z.string().url('Must be a valid URL').optional().or(z.literal('')),
-  seoOgTitle: z.string().optional(),
-  seoOgDescription: z.string().optional(),
-  seoOgImage: z.string().optional(),
-  seoTwitterTitle: z.string().optional(),
-  seoTwitterDescription: z.string().optional(),
-  seoTwitterImage: z.string().optional(),
-  seoSchemaJson: z.string().optional(),
-});
+type ProductFormValues = {
+  name: string;
+  slug: string;
+  description: string;
+  categoryId: string;
+  originCountry?: string;
+  foodType?: string;
+  stockStatus?: "In Stock" | "Out Stock" | "Out of Stock";
+  status: "Active" | "Inactive";
+  featured?: boolean;
+  seoMetaTitle?: string;
+  seoMetaDescription?: string;
+  seoAlt?: string;
+  seoIndex?: boolean;
+  seoFollow?: boolean;
+  seoCanonical?: string;
+  seoSchemaJson?: string;
+};
 
-type ProductFormValues = z.infer<typeof productSchema>;
-
-interface ProductFormProps {
-  product?: Product;
-  categories: Category[];
-  onSubmit: (data: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  isLoading?: boolean;
-}
-
-export default function ProductForm({ product, categories, onSubmit, isLoading }: ProductFormProps) {
+export default function ProductForm({
+  product,
+  categories,
+  onSubmit,
+  isLoading,
+}: any) {
   const router = useRouter();
   const [pricingExpanded, setPricingExpanded] = useState(true);
-  const [imageValue, setImageValue] = useState<string>(product?.images?.[0] ?? '');
-  const [priceList, setPriceList] = useState<PriceListItem[]>(product?.pricelist ?? []);
+  const [image, setImage] = useState<File | null>(
+    product?.images?.[0] instanceof File ? product.images[0] : null,
+  );
+  const [priceList, setPriceList] = useState<PriceListItem[]>(
+    product?.pricelist ?? [],
+  );
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
     watch,
     setValue,
-    formState: { errors },
+    formState: { errors, isSubmitted },
   } = useForm<ProductFormValues>({
-    resolver: zodResolver(productSchema),
+    mode: "onChange",
     defaultValues: {
-      name: product?.name ?? '',
-      slug: product?.slug ?? '',
-      description: product?.description ?? '',
-      price: product?.price ?? 0,
-      salePrice: product?.salePrice ?? '',
-      stock: product?.stock ?? 0,
-      categoryId: product?.categoryId ?? '',
-      originCountry: product?.originCountry ?? '',
-      foodType: product?.foodType ?? '',
-      stockStatus: (product?.stockStatus as ProductFormValues['stockStatus']) ?? 'In Stock',
-      status: product?.status ?? 'active',
+      name: product?.name ?? "",
+      slug: product?.slug ?? "",
+      description: product?.description ?? "",
+      categoryId: product?.categoryId ?? "",
+      originCountry: product?.originCountry ?? "",
+      foodType: product?.foodType ?? "",
+      stockStatus:
+        (product?.stockStatus as ProductFormValues["stockStatus"]) ??
+        "In Stock",
+      status: product?.status ?? "Active",
       featured: product?.featured ?? false,
-      seoMetaTitle: product?.seo?.metaTitle ?? '',
-      seoMetaDescription: product?.seo?.metaDescription ?? '',
-      seoAlt: product?.seo?.seoAlt ?? '',
+      seoMetaTitle: product?.seo?.metaTitle ?? "",
+      seoMetaDescription: product?.seo?.metaDescription ?? "",
+      seoAlt: product?.seo?.seoAlt ?? "",
       seoIndex: product?.seo?.index ?? true,
       seoFollow: product?.seo?.follow ?? true,
-      seoCanonical: product?.seo?.canonical ?? '',
-      seoOgTitle: product?.seo?.ogTitle ?? '',
-      seoOgDescription: product?.seo?.ogDescription ?? '',
-      seoOgImage: product?.seo?.ogImage ?? '',
-      seoTwitterTitle: product?.seo?.twitterTitle ?? '',
-      seoTwitterDescription: product?.seo?.twitterDescription ?? '',
-      seoTwitterImage: product?.seo?.twitterImage ?? '',
-      seoSchemaJson: product?.seo?.schemaJson ?? '',
+      seoCanonical: product?.seo?.canonical ?? "",
+      seoSchemaJson: product?.seo?.schemaJson ?? "",
     },
   });
 
-  const nameValue = watch('name');
+  const nameValue = watch("name");
 
-  const handleNameBlur = () => {
+  useEffect(() => {
+    // Auto-generate slug from name when product is new
     if (!product && nameValue) {
-      setValue('slug', slugify(nameValue));
+      setValue("slug", slugify(nameValue));
     }
-  };
+  }, [nameValue, product, setValue]);
 
   const handleFormSubmit = async (values: ProductFormValues) => {
-    const selectedCategory = categories.find((c) => c.id === values.categoryId);
-    await onSubmit({
-      name: values.name,
-      slug: values.slug,
-      description: values.description,
-      price: values.price,
-      salePrice: values.salePrice ? Number(values.salePrice) : undefined,
-      stock: values.stock,
-      category: selectedCategory?.name ?? '',
-      categoryId: values.categoryId,
-      originCountry: values.originCountry,
-      foodType: values.foodType,
-      stockStatus: values.stockStatus,
-      pricelist: priceList,
-      images: imageValue ? [imageValue] : [],
-      status: values.status,
-      featured: values.featured ?? false,
-      seo: {
-        metaTitle: values.seoMetaTitle,
-        metaDescription: values.seoMetaDescription,
-        seoAlt: values.seoAlt,
-        index: values.seoIndex ?? true,
-        follow: values.seoFollow ?? true,
-        canonical: values.seoCanonical || undefined,
-        ogTitle: values.seoOgTitle,
-        ogDescription: values.seoOgDescription,
-        ogImage: values.seoOgImage,
-        twitterTitle: values.seoTwitterTitle,
-        twitterDescription: values.seoTwitterDescription,
-        twitterImage: values.seoTwitterImage,
-        schemaJson: values.seoSchemaJson,
-      },
-    });
+    setSubmissionError(null);
+    setImageError(null);
+
+    // Validate image for new products
+    if (!product && !image) {
+      setImageError("Product image is required");
+      toast.error("Please upload a product image");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("name", values.name);
+    formData.append("slug", values.slug);
+    formData.append("description", values.description);
+    formData.append("categoryId", values.categoryId);
+    formData.append("originCountry", values.originCountry || "");
+    formData.append("foodType", values.foodType || "");
+    formData.append("stockStatus", values.stockStatus || "");
+    formData.append("status", values.status);
+    formData.append("featured", values.featured ? "true" : "false");
+    formData.append("pricelist", JSON.stringify(priceList));
+    // SEO fields
+    formData.append("seoMetaTitle", values.seoMetaTitle || "");
+    formData.append("seoMetaDescription", values.seoMetaDescription || "");
+    formData.append("seoAlt", values.seoAlt || "");
+    formData.append("seoIndex", values.seoIndex ? "true" : "false");
+    formData.append("seoFollow", values.seoFollow ? "true" : "false");
+    formData.append("seoCanonical", values.seoCanonical || "");
+    formData.append("seoSchemaJson", values.seoSchemaJson || "");
+    // Always append image if present and is File
+    if (image) {
+      formData.append("image", image);
+    }
+
+    try {
+      console.log("Submitting form with FormData");
+      await onSubmit(formData as any);
+    } catch (err: any) {
+      console.error("ProductForm submission error:", err);
+      let errorMessage = "Failed to save product";
+
+      if (err?.message) {
+        errorMessage = err.message;
+      } else if (err?.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (typeof err === "string") {
+        errorMessage = err;
+      }
+
+      setSubmissionError(errorMessage);
+      toast.error(errorMessage);
+    }
   };
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+      {/* Validation Errors Summary */}
+      {isSubmitted && Object.keys(errors).length > 0 && (
+        <div className="bg-red-50 border-l-4 border-red-600 rounded-lg p-4 flex gap-3 shadow-sm">
+          <AlertCircle className="h-6 w-6 text-red-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h3 className="text-sm font-semibold text-red-900 mb-1">
+              Please fix the following errors:
+            </h3>
+            <ul className="text-sm text-red-700 space-y-1">
+              {Object.entries(errors).map(([field, error]: any) => (
+                <li key={field}>• {error?.message || `${field} is invalid`}</li>
+              ))}
+            </ul>
+          </div>
+          <button
+            type="button"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            className="text-red-400 hover:text-red-600 flex-shrink-0 text-xs font-medium whitespace-nowrap"
+          >
+            Scroll up
+          </button>
+        </div>
+      )}
+
+      {/* Error Alert */}
+      {submissionError && (
+        <div className="bg-red-50 border-l-4 border-red-600 rounded-lg p-4 flex gap-3 shadow-sm">
+          <AlertCircle className="h-6 w-6 text-red-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h3 className="text-sm font-semibold text-red-900 mb-1">Error</h3>
+            <p className="text-sm text-red-700">{submissionError}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSubmissionError(null)}
+            className="text-red-400 hover:text-red-600 flex-shrink-0"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+      )}
+
       {/* Basic Information */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
-        <h2 className="text-base font-semibold text-gray-900">Basic Information</h2>
+        <h2 className="text-base font-semibold text-gray-900">
+          Basic Information
+        </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
@@ -151,14 +206,20 @@ export default function ProductForm({ product, categories, onSubmit, isLoading }
             required
             placeholder="e.g. Dragon Fruit"
             error={errors.name?.message}
-            {...register('name', { onBlur: handleNameBlur })}
+            {...register("name", { 
+              required: "Product name is required",
+              minLength: { value: 1, message: "Product name is required" }
+            })}
           />
           <Input
             label="Slug"
             required
             placeholder="e.g. dragon-fruit"
             error={errors.slug?.message}
-            {...register('slug')}
+            {...register("slug", { 
+              required: "Slug is required",
+              minLength: { value: 1, message: "Slug is required" }
+            })}
           />
         </div>
 
@@ -169,46 +230,21 @@ export default function ProductForm({ product, categories, onSubmit, isLoading }
           <textarea
             rows={3}
             className={`block w-full px-3 py-2 border rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
-              errors.description ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-white'
+              errors.description
+                ? "border-red-300 bg-red-50"
+                : "border-gray-300 bg-white"
             }`}
             placeholder="Describe the product..."
-            {...register('description')}
+            {...register("description", { 
+              required: "Description is required",
+              minLength: { value: 1, message: "Description is required" }
+            })}
           />
           {errors.description && (
-            <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
+            <p className="mt-1 text-sm text-red-600">
+              {errors.description.message}
+            </p>
           )}
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Input
-            label="Price (USD)"
-            required
-            type="number"
-            step="0.01"
-            min="0"
-            placeholder="0.00"
-            error={errors.price?.message}
-            {...register('price')}
-          />
-          <Input
-            label="Sale Price (USD)"
-            type="number"
-            step="0.01"
-            min="0"
-            placeholder="0.00"
-            error={errors.salePrice?.message}
-            {...register('salePrice')}
-          />
-          <Input
-            label="Stock Quantity"
-            required
-            type="number"
-            min="0"
-            step="1"
-            placeholder="0"
-            error={errors.stock?.message}
-            {...register('stock')}
-          />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -218,43 +254,75 @@ export default function ProductForm({ product, categories, onSubmit, isLoading }
             </label>
             <select
               className={`block w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-colors ${
-                errors.categoryId ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-white'
+                errors.categoryId
+                  ? "border-red-300 bg-red-50"
+                  : "border-gray-300 bg-white"
               }`}
-              {...register('categoryId')}
+              {...register("categoryId", { 
+                required: "Category is required" 
+              })}
             >
               <option value="">Select category...</option>
-              {categories.map((cat) => (
+              {categories.map((cat: any) => (
                 <option key={cat.id} value={cat.id}>
                   {cat.name}
                 </option>
               ))}
             </select>
             {errors.categoryId && (
-              <p className="mt-1 text-sm text-red-600">{errors.categoryId.message}</p>
+              <p className="mt-1 text-sm text-red-600">
+                {errors.categoryId.message}
+              </p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Status <span className="text-red-500">*</span>
+            </label>
             <select
-              className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
-              {...register('status')}
+              className={`block w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors ${
+                errors.status
+                  ? "border-red-300 bg-red-50"
+                  : "border-gray-300 bg-white"
+              }`}
+              {...register("status", { 
+                required: "Status is required",
+                validate: (val) => ["Active", "Inactive"].includes(val) || "Invalid status value"
+              })}
             >
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="draft">Draft</option>
+              <option value="">Select status...</option>
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
             </select>
+            {errors.status && (
+              <p className="mt-1 text-sm text-red-600">
+                {errors.status.message}
+              </p>
+            )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Stock Status</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Stock Status
+            </label>
             <select
-              className="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
-              {...register('stockStatus')}
+              className={`block w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors ${
+                errors.stockStatus
+                  ? "border-red-300 bg-red-50"
+                  : "border-gray-300 bg-white"
+              }`}
+              {...register("stockStatus")}
             >
+              <option value="">Select stock status...</option>
               <option value="In Stock">In Stock</option>
               <option value="Out Stock">Out Stock</option>
             </select>
+            {errors.stockStatus && (
+              <p className="mt-1 text-sm text-red-600">
+                {errors.stockStatus.message}
+              </p>
+            )}
           </div>
         </div>
 
@@ -262,23 +330,33 @@ export default function ProductForm({ product, categories, onSubmit, isLoading }
           <Input
             label="Origin Country"
             placeholder="e.g. Thailand"
-            {...register('originCountry')}
+            {...register("originCountry")}
           />
           <Input
             label="Food Type"
             placeholder="e.g. Regular, Organic, Premium"
-            {...register('foodType')}
+            {...register("foodType")}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Product Image</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Product Image {!product && <span className="text-red-500">*</span>}
+          </label>
           <ImageUpload
-            value={imageValue}
-            onChange={setImageValue}
+            value={image}
+            onChange={(file: any) => {
+              setImage(file instanceof File ? file : null);
+              setImageError(null);
+            }}
             preview
-            crop
           />
+          {imageError && (
+            <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+              <AlertCircle className="h-4 w-4" />
+              {imageError}
+            </p>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -286,9 +364,12 @@ export default function ProductForm({ product, categories, onSubmit, isLoading }
             type="checkbox"
             id="featured"
             className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
-            {...register('featured')}
+            {...register("featured")}
           />
-          <label htmlFor="featured" className="text-sm font-medium text-gray-700">
+          <label
+            htmlFor="featured"
+            className="text-sm font-medium text-gray-700"
+          >
             Featured product
           </label>
         </div>
@@ -302,9 +383,12 @@ export default function ProductForm({ product, categories, onSubmit, isLoading }
           onClick={() => setPricingExpanded((v) => !v)}
         >
           <div>
-            <h2 className="text-base font-semibold text-gray-900">Unit Sizes &amp; Pricing</h2>
+            <h2 className="text-base font-semibold text-gray-900">
+              Unit Sizes &amp; Pricing
+            </h2>
             <p className="text-sm text-gray-500 mt-0.5">
-              Add multiple unit sizes (e.g. 400g, 500g, 600g) with individual pricing and discounts
+              Add multiple unit sizes (e.g. 400g, 500g, 600g) with individual
+              pricing and discounts
             </p>
           </div>
           {pricingExpanded ? (
@@ -326,13 +410,22 @@ export default function ProductForm({ product, categories, onSubmit, isLoading }
 
       {/* Actions */}
       <div className="flex items-center justify-between">
-        <Button type="button" variant="outline" onClick={() => router.push('/products')}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => router.push("/products")}
+        >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Products
         </Button>
-        <Button type="submit" isLoading={isLoading}>
+        <Button
+          type="submit"
+          isLoading={isLoading}
+          disabled={isSubmitted && Object.keys(errors).length > 0}
+          className={isSubmitted && Object.keys(errors).length > 0 ? "opacity-50 cursor-not-allowed" : ""}
+        >
           <Save className="h-4 w-4 mr-2" />
-          {product ? 'Update Product' : 'Create Product'}
+          {product ? "Update Product" : "Create Product"}
         </Button>
       </div>
     </form>

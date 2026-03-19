@@ -75,37 +75,7 @@ export default function ProductsPage() {
         </div>
       ),
     },
-    { key: "category", header: "Category" },
-    {
-      key: "pricelist",
-      header: "Sizes",
-      render: (_: unknown, row: Product) => {
-        const activeUnits = row.pricelist?.filter((u) => u.isactive) ?? [];
-        if (activeUnits.length === 0)
-          return <span className="text-gray-400 text-xs">—</span>;
-        return (
-          <div className="flex flex-wrap gap-1">
-            {activeUnits.map((u) => (
-              <span
-                key={u.unitId}
-                className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700"
-              >
-                {u.unitName}
-              </span>
-            ))}
-          </div>
-        );
-      },
-    },
-    {
-      key: "priceRange",
-      header: "Price Range",
-      render: (_: unknown, row: Product) => (
-        <span className="text-sm font-medium text-gray-900">
-          {getPriceRange(row.pricelist)}
-        </span>
-      ),
-    },
+    { key: "category_name", header: "Category" },
     {
       key: "stockStatus",
       header: "Stock",
@@ -138,11 +108,6 @@ export default function ProductsPage() {
           {String(val)}
         </span>
       ),
-    },
-    {
-      key: "updatedAt",
-      header: "Updated",
-      render: (val: unknown) => formatDate(val as string),
     },
     {
       key: "actions",

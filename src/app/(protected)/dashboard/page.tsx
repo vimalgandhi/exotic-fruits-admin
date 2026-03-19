@@ -6,32 +6,33 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 
 export default function DashboardPage() {
   const { stats, loading } = useAdminDashboard();
-
+  console.log(stats, 'stats');
+  
   const statCards = [
     {
       label: 'Total Products',
-      value: loading ? '—' : String(stats?.totalProducts ?? 0),
+      value: loading ? '—' : String(stats?.stats?.totalProducts ?? 0),
       icon: Package,
       color: 'text-blue-600',
       bg: 'bg-blue-100',
     },
     {
       label: 'Total Orders',
-      value: loading ? '—' : String(stats?.totalOrders ?? 0),
+      value: loading ? '—' : String(stats?.stats?.totalOrders ?? 0),
       icon: ShoppingCart,
       color: 'text-orange-600',
       bg: 'bg-orange-100',
     },
     {
       label: 'Total Users',
-      value: loading ? '—' : String(stats?.totalUsers ?? 0),
+      value: loading ? '—' : String(stats?.stats?.totalUsers ?? 0),
       icon: Tag,
       color: 'text-purple-600',
       bg: 'bg-purple-100',
     },
     {
       label: 'Total Revenue',
-      value: loading ? '—' : formatCurrency(stats?.totalRevenue ?? 0),
+      value: loading ? '—' : formatCurrency(stats?.stats?.totalRevenue ?? 0),
       icon: DollarSign,
       color: 'text-green-600',
       bg: 'bg-green-100',
@@ -42,7 +43,7 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-500 mt-1">Welcome to Exotic Fruits Admin Panel</p>
+        <p className="text-gray-500 mt-1">Welcome to Admin Panel</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -64,16 +65,16 @@ export default function DashboardPage() {
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Top Products</h2>
           {loading ? (
             <p className="text-sm text-gray-400">Loading...</p>
-          ) : (stats?.topProducts ?? []).length === 0 ? (
+          ) : (stats?.stats?.topProducts ?? []).length === 0 ? (
             <p className="text-sm text-gray-400">No data available</p>
           ) : (
             <div className="space-y-3">
-              {(stats?.topProducts ?? []).map((item: unknown, i: number) => {
+              {(stats?.stats?.topProducts ?? []).map((item: unknown, i: number) => {
                 const product = item as Record<string, unknown>;
                 return (
                   <div key={String(product.id ?? i)} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
@@ -117,7 +118,7 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }

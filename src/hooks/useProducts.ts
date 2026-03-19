@@ -29,30 +29,32 @@ export function useProducts() {
     }
   }, []);
 
-  const createProduct = useCallback(async (data: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const createProduct = useCallback(async (formData: FormData) => {
     setIsLoading(true);
     try {
-      const response = await apiClient.post<{ data: Product }>('/products', data);
+      const response = await apiClient.post<{ data: Product }>('/products', formData);
       const newProduct = response.data.data;
       setProducts((prev) => [newProduct, ...prev]);
       return newProduct;
-    } catch (err) {
-      logger.error('useProducts/createProduct', 'Failed to create product', err);
-      throw new Error('Failed to create product');
+    } catch (err: any) {
+      const errorMessage = err?.message || 'Failed to create product';
+      logger.error('useProducts/createProduct', errorMessage, err);
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const updateProduct = useCallback(async (id: string, data: Partial<Product>) => {
+  const updateProduct = useCallback(async (id: string, formData: FormData) => {
     setIsLoading(true);
     try {
-      const response = await apiClient.put<{ data: Product }>(`/products/${id}`, data);
+      const response = await apiClient.put<{ data: Product }>(`/products/${id}`, formData);
       const updated = response.data.data;
       setProducts((prev) => prev.map((p) => (p.id === id ? updated : p)));
-    } catch (err) {
-      logger.error('useProducts/updateProduct', `Failed to update product id=${id}`, err);
-      throw new Error('Failed to update product');
+    } catch (err: any) {
+      const errorMessage = err?.message || `Failed to update product id=${id}`;
+      logger.error('useProducts/updateProduct', errorMessage, err);
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }
