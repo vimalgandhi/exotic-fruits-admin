@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { getToken } from './auth';
+import { logger } from './logger';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
 
@@ -21,6 +22,11 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    logger.error(
+      'apiClient',
+      `HTTP ${error.response?.status ?? 'network'} error`,
+      error,
+    );
     if (error.response?.status === 401) {
       if (typeof window !== 'undefined') {
         window.location.href = '/login';
@@ -45,8 +51,16 @@ function getAuthHeaders(): Record<string, string> {
 // Helper function to handle API responses
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    throw new Error((error as { message?: string }).message ?? 'API request failed');
+    const body = await response.json().catch(() => ({}));
+    const message = (body as { message?: string }).message ?? 'API request failed';
+    logger.error('handleResponse', `HTTP ${response.status} ${response.statusText} — ${response.url}`, {
+      status: response.status,
+      statusText: response.statusText,
+      url: response.url,
+      responseBody: body,
+      message,
+    });
+    throw new Error(message);
   }
   return response.json() as Promise<T>;
 }

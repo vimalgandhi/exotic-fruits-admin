@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import type { Product } from '@/types';
 import { MOCK_PRODUCTS } from '@/lib/mock-data';
 import apiClient from '@/lib/api';
+import { logger } from '@/lib/logger';
 
 export function useProducts() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -19,7 +20,8 @@ export function useProducts() {
     try {
       const response = await apiClient.get<{ data: Product[] }>('/admin/products');
       setProducts(response.data.data ?? []);
-    } catch {
+    } catch (err) {
+      logger.warn('useProducts/fetchProducts', 'Failed to fetch products — falling back to mock data', err);
       setError('Failed to fetch products');
       setProducts(MOCK_PRODUCTS);
     } finally {
@@ -34,7 +36,8 @@ export function useProducts() {
       const newProduct = response.data.data;
       setProducts((prev) => [newProduct, ...prev]);
       return newProduct;
-    } catch {
+    } catch (err) {
+      logger.error('useProducts/createProduct', 'Failed to create product', err);
       throw new Error('Failed to create product');
     } finally {
       setIsLoading(false);
@@ -47,7 +50,8 @@ export function useProducts() {
       const response = await apiClient.put<{ data: Product }>(`/products/${id}`, data);
       const updated = response.data.data;
       setProducts((prev) => prev.map((p) => (p.id === id ? updated : p)));
-    } catch {
+    } catch (err) {
+      logger.error('useProducts/updateProduct', `Failed to update product id=${id}`, err);
       throw new Error('Failed to update product');
     } finally {
       setIsLoading(false);
@@ -59,7 +63,8 @@ export function useProducts() {
     try {
       await apiClient.delete(`/products/${id}`);
       setProducts((prev) => prev.filter((p) => p.id !== id));
-    } catch {
+    } catch (err) {
+      logger.error('useProducts/deleteProduct', `Failed to delete product id=${id}`, err);
       throw new Error('Failed to delete product');
     } finally {
       setIsLoading(false);

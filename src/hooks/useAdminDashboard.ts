@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getDashboardStats, getAnalyticsData } from '@/lib/api';
+import { logger } from '@/lib/logger';
 
 interface DashboardStats {
   totalRevenue: number;
@@ -23,7 +24,9 @@ export function useAdminDashboard() {
       setStats(data.data);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch dashboard stats');
+      const message = err instanceof Error ? err.message : 'Failed to fetch dashboard stats';
+      logger.error('useAdminDashboard/fetchDashboardStats', message, err);
+      setError(message);
       setStats(null);
     } finally {
       setLoading(false);
@@ -39,6 +42,7 @@ export function useAdminDashboard() {
       const data = (await getAnalyticsData(startDate, endDate)) as { data: unknown };
       return data.data;
     } catch (err) {
+      logger.error('useAdminDashboard/getAnalytics', 'Failed to fetch analytics data', err);
       throw new Error(err instanceof Error ? err.message : 'Failed to fetch analytics');
     }
   };

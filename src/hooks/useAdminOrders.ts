@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { getAdminOrders, getAdminOrderById, updateOrderStatus } from '@/lib/api';
+import { logger } from '@/lib/logger';
 
 interface Order {
   id: string;
@@ -24,6 +25,7 @@ export function useAdminOrders() {
       return data;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to fetch orders';
+      logger.error('useAdminOrders/fetchOrders', message, err);
       setError(message);
       throw err;
     } finally {
@@ -36,6 +38,7 @@ export function useAdminOrders() {
       const data = (await getAdminOrderById(id)) as { data: Order };
       return data.data;
     } catch (err) {
+      logger.error('useAdminOrders/getOrder', `Failed to fetch order id=${id}`, err);
       throw new Error(err instanceof Error ? err.message : 'Failed to fetch order');
     }
   }, []);
@@ -50,6 +53,7 @@ export function useAdminOrders() {
         return data;
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to update order status';
+        logger.error('useAdminOrders/updateStatus', `Failed to update status for order id=${id}`, err);
         setError(message);
         throw err;
       } finally {

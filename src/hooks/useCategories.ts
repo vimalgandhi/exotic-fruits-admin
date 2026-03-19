@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import type { Category } from '@/types/category';
 import { MOCK_CATEGORIES } from '@/lib/mock-data';
 import apiClient from '@/lib/api';
+import { logger } from '@/lib/logger';
 
 export function useCategories() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -19,7 +20,8 @@ export function useCategories() {
     try {
       const response = await apiClient.get<{ data: Category[] }>('/categories');
       setCategories(response.data.data ?? []);
-    } catch {
+    } catch (err) {
+      logger.warn('useCategories/fetchCategories', 'Failed to fetch categories — falling back to mock data', err);
       setError('Failed to fetch categories');
       setCategories(MOCK_CATEGORIES);
     } finally {
@@ -34,7 +36,8 @@ export function useCategories() {
       const newCategory = response.data.data;
       setCategories((prev) => [newCategory, ...prev]);
       return newCategory;
-    } catch {
+    } catch (err) {
+      logger.error('useCategories/createCategory', 'Failed to create category', err);
       throw new Error('Failed to create category');
     } finally {
       setIsLoading(false);
@@ -47,7 +50,8 @@ export function useCategories() {
       const response = await apiClient.put<{ data: Category }>(`/categories/${id}`, data);
       const updated = response.data.data;
       setCategories((prev) => prev.map((c) => (c.id === id ? updated : c)));
-    } catch {
+    } catch (err) {
+      logger.error('useCategories/updateCategory', `Failed to update category id=${id}`, err);
       throw new Error('Failed to update category');
     } finally {
       setIsLoading(false);
@@ -59,7 +63,8 @@ export function useCategories() {
     try {
       await apiClient.delete(`/categories/${id}`);
       setCategories((prev) => prev.filter((c) => c.id !== id));
-    } catch {
+    } catch (err) {
+      logger.error('useCategories/deleteCategory', `Failed to delete category id=${id}`, err);
       throw new Error('Failed to delete category');
     } finally {
       setIsLoading(false);

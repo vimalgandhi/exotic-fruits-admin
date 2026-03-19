@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { getAdminUsers, getAdminUserById, deleteAdminUser } from '@/lib/api';
+import { logger } from '@/lib/logger';
 
 interface User {
   id: string;
@@ -24,6 +25,7 @@ export function useAdminUsers() {
       return data;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to fetch users';
+      logger.error('useAdminUsers/fetchUsers', message, err);
       setError(message);
       throw err;
     } finally {
@@ -36,6 +38,7 @@ export function useAdminUsers() {
       const data = (await getAdminUserById(id)) as { data: User };
       return data.data;
     } catch (err) {
+      logger.error('useAdminUsers/getUser', `Failed to fetch user id=${id}`, err);
       throw new Error(err instanceof Error ? err.message : 'Failed to fetch user');
     }
   }, []);
@@ -49,6 +52,7 @@ export function useAdminUsers() {
         setError(null);
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to delete user';
+        logger.error('useAdminUsers/deleteUser', `Failed to delete user id=${id}`, err);
         setError(message);
         throw err;
       } finally {

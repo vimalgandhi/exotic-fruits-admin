@@ -6,6 +6,7 @@ import {
   updateAdminProduct,
   deleteAdminProduct,
 } from '@/lib/api';
+import { logger } from '@/lib/logger';
 
 interface Product {
   id: string;
@@ -30,6 +31,7 @@ export function useAdminProducts() {
       return data;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to fetch products';
+      logger.error('useAdminProducts/fetchProducts', message, err);
       setError(message);
       throw err;
     } finally {
@@ -42,6 +44,7 @@ export function useAdminProducts() {
       const data = (await getAdminProductById(id)) as { data: Product };
       return data.data;
     } catch (err) {
+      logger.error('useAdminProducts/getProduct', `Failed to fetch product id=${id}`, err);
       throw new Error(err instanceof Error ? err.message : 'Failed to fetch product');
     }
   }, []);
@@ -54,6 +57,7 @@ export function useAdminProducts() {
       return data;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create product';
+      logger.error('useAdminProducts/createProduct', message, err);
       setError(message);
       throw err;
     } finally {
@@ -69,6 +73,7 @@ export function useAdminProducts() {
       return data;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update product';
+      logger.error('useAdminProducts/updateProduct', `Failed to update product id=${id}`, err);
       setError(message);
       throw err;
     } finally {
@@ -85,6 +90,7 @@ export function useAdminProducts() {
         setError(null);
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to delete product';
+        logger.error('useAdminProducts/deleteProduct', `Failed to delete product id=${id}`, err);
         setError(message);
         throw err;
       } finally {
