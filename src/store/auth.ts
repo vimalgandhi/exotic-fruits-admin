@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { User, AuthState, LoginCredentials } from '@/types';
-import { setToken, removeToken, setStoredUser, removeStoredUser, getStoredUser, getToken } from '@/lib/auth';
+import { setSession, clearSession, setStoredUser, removeStoredUser, getStoredUser } from '@/lib/auth';
 import apiClient from '@/lib/api';
 import { MOCK_CREDENTIALS, MOCK_USER } from '@/lib/mock-data';
 import { logger } from '@/lib/logger';
@@ -13,30 +13,26 @@ interface AuthStore extends AuthState {
 
 export const useAuthStore = create<AuthStore>((set) => ({
   user: null,
-  token: null,
   isAuthenticated: false,
   isLoading: false,
 
   initialize: () => {
-    const token = getToken();
     const user = getStoredUser<User>();
-    if (token && user) {
-      set({ user, token, isAuthenticated: true });
+    if (user) {
+      set({ user, isAuthenticated: true });
     }
   },
 
   login: async (credentials: LoginCredentials) => {
     set({ isLoading: true });
     try {
-      let token: string;
       let user: User;
 
       try {
-        const response = await apiClient.post<{ data: { user: User; token: string } }>(
+        const response = await apiClient.post<{ data: { user: User } }>(
           '/auth/login',
           credentials
         );
-        token = response.data.data.token;
         user = response.data.data.user;
         logger.info('auth/login', 'Login successful via API', { email: credentials.email });
       } catch (apiErr) {
@@ -48,13 +44,12 @@ export const useAuthStore = create<AuthStore>((set) => ({
         ) {
           throw new Error('Invalid email or password');
         }
-        token = 'mock_token_' + Date.now();
         user = MOCK_USER;
       }
 
-      setToken(token);
       setStoredUser(user);
-      set({ user, token, isAuthenticated: true, isLoading: false });
+      setSession();
+      set({ user, isAuthenticated: true, isLoading: false });
     } catch (error) {
       logger.error('auth/login', 'Login failed', error);
       set({ isLoading: false });
@@ -64,8 +59,8 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
   logout: () => {
     logger.info('auth/logout', 'User logged out');
-    removeToken();
+    clearSession();
     removeStoredUser();
-    set({ user: null, token: null, isAuthenticated: false });
+    set({ user: null, isAuthenticated: false });
   },
 }));

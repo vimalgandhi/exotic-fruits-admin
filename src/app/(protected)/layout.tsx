@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
-import { getToken } from '@/lib/auth';
+import { getStoredUser } from '@/lib/auth';
 import Sidebar from '@/components/layout/sidebar';
 import Header from '@/components/layout/header';
 
@@ -17,8 +17,8 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     if (!isAuthenticated) {
-      const token = getToken();
-      if (!token) {
+      const user = getStoredUser();
+      if (!user) {
         router.push('/login');
       }
     }
