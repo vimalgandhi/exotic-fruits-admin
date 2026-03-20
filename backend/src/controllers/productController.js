@@ -3,9 +3,49 @@
 const { Op } = require('sequelize');
 const Product = require('../models/Product');
 const Category = require('../models/Category');
+const Wishlist = require('../models/Wishlist');
 const { sendSuccess, sendError, sendPaginated } = require('../utils/responses');
 const { slugify, getPaginationParams } = require('../utils/helpers');
 const { uploadToCloudinary } = require('../utils/cloudinaryUpload');
+
+const addWishlistFlag = async (products, userId) => {
+  console.log('DEBUG - userId:', userId);
+  
+  // If no userId, all items have inWishlist false
+  if (!userId) {
+    console.log('DEBUG - No userId, setting all inWishlist to false');
+    return products.map(p => {
+      const data = p.dataValues ? { ...p.dataValues } : { ...p };
+      data.inWishlist = false;
+      return data;
+    });
+  }
+  
+  // Get wishlist items for this user
+  const wishlistItems = await Wishlist.findAll({
+    where: { user_id: userId },
+    attributes: ['product_id'],
+    raw: true
+  });
+  
+  console.log('DEBUG - Wishlist items found:', wishlistItems);
+  
+  // Convert all product_ids to numbers for reliable comparison
+  const wishlistProductIds = new Set(
+    wishlistItems.map(w => Number(w.product_id))
+  );
+  
+  console.log('DEBUG - Wishlist product IDs set:', Array.from(wishlistProductIds));
+  
+  return products.map(p => {
+    const data = p.dataValues ? { ...p.dataValues } : { ...p };
+    // Get product ID - handle both Sequelize instances and plain objects
+    const productId = Number(p.dataValues?.id || p.id);
+    data.inWishlist = wishlistProductIds.has(productId);
+    console.log(`DEBUG - Product ${productId}, inWishlist: ${data.inWishlist}`);
+    return data;
+  });
+};
 
 const getProducts = async (req, res, next) => {
   try {
@@ -13,7 +53,18 @@ const getProducts = async (req, res, next) => {
     const { category, minPrice, maxPrice, sort } = req.query;
 
     const where = {};
-    if (category) where.category_id = category;
+    
+    // Handle multiple categories: ?category=7,6 or ?category=7&category=6
+    if (category) {
+      const categoryArray = Array.isArray(category) 
+        ? category 
+        : category.split(',').map(c => c.trim());
+      
+      where.category_id = {
+        [Op.in]: categoryArray.map(c => Number(c))
+      };
+    }
+    
     if (minPrice || maxPrice) {
       where.price = {};
       if (minPrice) where.price[Op.gte] = parseFloat(minPrice);
@@ -34,7 +85,10 @@ const getProducts = async (req, res, next) => {
       offset
     });
 
-    return sendPaginated(res, rows, count, page, limit, 'Products retrieved');
+    console.log(req.user?.id, 'userId ---req.user?.id');
+    console.log(rows, 'rows ----req.user?.id');
+    const rowsWithWishlist = await addWishlistFlag(rows, req.user?.id);
+    return sendPaginated(res, rowsWithWishlist, count, page, limit, 'Products retrieved');
   } catch (err) {
     next(err);
   }
@@ -42,11 +96,26 @@ const getProducts = async (req, res, next) => {
 
 const getProduct = async (req, res, next) => {
   try {
-    const product = await Product.findByPk(req.params.id, {
-      include: [{ model: Category, as: 'category', attributes: ['id', 'name', 'slug'] }]
-    });
+    let product;
+    
+    // Handle both ID and slug-based routes
+    if (req.params.id) {
+      // ID-based lookup
+      product = await Product.findByPk(req.params.id, {
+        include: [{ model: Category, as: 'category', attributes: ['id', 'name', 'slug'] }]
+      });
+    } else if (req.params.slug) {
+      // Slug-based lookup
+      product = await Product.findOne({
+        where: { slug: req.params.slug },
+        include: [{ model: Category, as: 'category', attributes: ['id', 'name', 'slug'] }]
+      });
+    }
+    
     if (!product) return sendError(res, 404, 'NOT_FOUND', 'Product not found');
-    return sendSuccess(res, 200, product, 'Product retrieved');
+    
+    const [productWithWishlist] = await addWishlistFlag([product], req.user?.id);
+    return sendSuccess(res, 200, productWithWishlist, 'Product retrieved');
   } catch (err) {
     next(err);
   }
@@ -70,7 +139,8 @@ const searchProducts = async (req, res, next) => {
       offset
     });
 
-    return sendPaginated(res, rows, count, page, limit, 'Search results');
+    const rowsWithWishlist = await addWishlistFlag(rows, req.user?.id);
+    return sendPaginated(res, rowsWithWishlist, count, page, limit, 'Search results');
   } catch (err) {
     next(err);
   }
@@ -88,7 +158,8 @@ const getProductsByCategory = async (req, res, next) => {
       offset
     });
 
-    return sendPaginated(res, rows, count, page, limit, 'Products by category');
+    const rowsWithWishlist = await addWishlistFlag(rows, req.user?.id);
+    return sendPaginated(res, rowsWithWishlist, count, page, limit, 'Products by category');
   } catch (err) {
     next(err);
   }

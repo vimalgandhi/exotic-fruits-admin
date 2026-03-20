@@ -57,7 +57,7 @@ const loginUser = async (req, res, next) => {
     return sendSuccess(res, 200, {
       accessToken,
       refreshToken,
-      user: { id: user.id, email: user.email, name: user.name, role: user.role }
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, phone: user.phone }
     }, 'Login successful');
   } catch (err) {
     next(err);

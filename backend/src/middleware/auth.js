@@ -30,4 +30,31 @@ const adminOnly = (req, res, next) => {
   next();
 };
 
-module.exports = { protect, adminOnly };
+const optionalAuth = (req, res, next) => {
+  console.log('\n=== OPTIONAL AUTH MIDDLEWARE START ===');
+  const authHeader = req.headers.authorization;
+  console.log('Authorization header:', authHeader);
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.log('No valid Bearer token found');
+    console.log('=== OPTIONAL AUTH MIDDLEWARE END (NO TOKEN) ===\n');
+    return next();
+  }
+
+  try {
+    const token = authHeader.split(' ')[1];
+    console.log('Token found, attempting decode...');
+    const decoded = jwt.verify(token, jwtSecret);
+    console.log('✅ Token decoded successfully!');
+    console.log('Decoded user ID:', decoded.id);
+    req.user = decoded;
+    console.log('✅ req.user set:', req.user);
+  } catch (err) {
+    console.log('❌ Token error:', err.message);
+  }
+  
+  console.log('=== OPTIONAL AUTH MIDDLEWARE END ===\n');
+  next();
+};
+
+module.exports = { protect, adminOnly, optionalAuth };
