@@ -28,7 +28,7 @@ const getProducts = async (req, res, next) => {
 
     const { count, rows } = await Product.findAndCountAll({
       where,
-      include: [{ model: Category, as: 'category', attributes: ['id', 'name', 'slug'] }],
+      include: [{ model: Category, as: 'category', attributes: ['id', 'name', 'slug', 'status'] }],
       order,
       limit,
       offset
@@ -96,17 +96,60 @@ const getProductsByCategory = async (req, res, next) => {
 
 const createProduct = async (req, res, next) => {
   try {
-    const { name, description, price, category_id, stock } = req.body;
-    const slug = slugify(name);
-
+    const {
+      name,
+      slug,
+      description,
+      categoryId,
+      originCountry,
+      foodType,
+      stockStatus,
+      status,
+      featured,
+      pricelist,
+      seoMetaTitle,
+      seoMetaDescription,
+      seoAlt,
+      seoIndex,
+      seoFollow,
+      seoCanonical,
+      seoSchemaJson,
+      stock
+    } = req.body;
+    const slugValue = slug || slugify(name);
     let imageUrl = null;
     if (req.file) {
       const uploaded = await uploadToCloudinary(req.file.buffer, 'exotic-fruits/products');
       imageUrl = uploaded.url;
     }
-
-    const product = await Product.create({ name, slug, description, price, category_id, stock, image: imageUrl });
-    return sendSuccess(res, 201, product, 'Product created');
+    const product = await Product.create({
+      name,
+      slug: slugValue,
+      description,
+      category_id: categoryId,
+      originCountry,
+      foodType,
+      stockStatus,
+      status,
+      featured,
+      pricelist,
+      seoMetaTitle,
+      seoMetaDescription,
+      seoAlt,
+      seoIndex,
+      seoFollow,
+      seoCanonical,
+      seoSchemaJson,
+      stock,
+      image: imageUrl
+    });
+    // Flatten category_name in response
+    let response = product.toJSON();
+    if (product.category_id) {
+      const category = await Category.findByPk(product.category_id);
+      response.category_name = category ? category.name : null;
+    }
+    return sendSuccess(res, 201, response, 'Product created');
   } catch (err) {
     next(err);
   }
@@ -117,12 +160,47 @@ const updateProduct = async (req, res, next) => {
     const product = await Product.findByPk(req.params.id);
     if (!product) return sendError(res, 404, 'NOT_FOUND', 'Product not found');
 
-    const { name, description, price, category_id, stock } = req.body;
-    const updates = { description, price, category_id, stock };
+    const {
+      name,
+      slug,
+      description,
+      categoryId,
+      originCountry,
+      foodType,
+      stockStatus,
+      status,
+      featured,
+      pricelist,
+      seoMetaTitle,
+      seoMetaDescription,
+      seoAlt,
+      seoIndex,
+      seoFollow,
+      seoCanonical,
+      seoSchemaJson,
+      stock
+    } = req.body;
+    const updates = {};
     if (name) {
       updates.name = name;
-      updates.slug = slugify(name);
+      updates.slug = slug || slugify(name);
     }
+    if (description !== undefined) updates.description = description;
+    if (categoryId !== undefined) updates.category_id = categoryId;
+    if (originCountry !== undefined) updates.originCountry = originCountry;
+    if (foodType !== undefined) updates.foodType = foodType;
+    if (stockStatus !== undefined) updates.stockStatus = stockStatus;
+    if (status !== undefined) updates.status = status;
+    if (featured !== undefined) updates.featured = featured;
+    if (pricelist !== undefined) updates.pricelist = pricelist;
+    if (seoMetaTitle !== undefined) updates.seoMetaTitle = seoMetaTitle;
+    if (seoMetaDescription !== undefined) updates.seoMetaDescription = seoMetaDescription;
+    if (seoAlt !== undefined) updates.seoAlt = seoAlt;
+    if (seoIndex !== undefined) updates.seoIndex = seoIndex;
+    if (seoFollow !== undefined) updates.seoFollow = seoFollow;
+    if (seoCanonical !== undefined) updates.seoCanonical = seoCanonical;
+    if (seoSchemaJson !== undefined) updates.seoSchemaJson = seoSchemaJson;
+    if (stock !== undefined) updates.stock = stock;
 
     if (req.file) {
       const uploaded = await uploadToCloudinary(req.file.buffer, 'exotic-fruits/products');

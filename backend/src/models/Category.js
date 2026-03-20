@@ -17,6 +17,19 @@ const Category = sequelize.define('Category', {
     type: DataTypes.STRING(120),
     allowNull: false,
     unique: true
+  },
+  description: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  status: {
+    type: DataTypes.ENUM('Active', 'Inactive'),
+    allowNull: false,
+    defaultValue: 'Active'
+  },
+  image: {
+    type: DataTypes.STRING,
+    allowNull: true
   }
 }, {
   tableName: 'categories',

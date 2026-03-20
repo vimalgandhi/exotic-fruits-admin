@@ -3,6 +3,7 @@
 const Category = require('../models/Category');
 const { sendSuccess, sendError } = require('../utils/responses');
 const { slugify } = require('../utils/helpers');
+const { uploadToCloudinary } = require('../utils/cloudinaryUpload');
 
 const getCategories = async (req, res, next) => {
   try {
@@ -25,9 +26,14 @@ const getCategory = async (req, res, next) => {
 
 const createCategory = async (req, res, next) => {
   try {
-    const { name } = req.body;
+    const { name, description, status } = req.body;
     const slug = slugify(name);
-    const category = await Category.create({ name, slug });
+    let imageUrl = null;
+    if (req.file) {
+      const uploaded = await uploadToCloudinary(req.file.buffer, 'exotic-fruits/categories');
+      imageUrl = uploaded.url;
+    }
+    const category = await Category.create({ name, slug, description, status, image: imageUrl });
     return sendSuccess(res, 201, category, 'Category created');
   } catch (err) {
     next(err);
@@ -38,9 +44,15 @@ const updateCategory = async (req, res, next) => {
   try {
     const category = await Category.findByPk(req.params.id);
     if (!category) return sendError(res, 404, 'NOT_FOUND', 'Category not found');
-    const { name } = req.body;
+    const { name, description, status } = req.body;
     const updates = {};
     if (name) { updates.name = name; updates.slug = slugify(name); }
+    if (description !== undefined) updates.description = description;
+    if (status !== undefined) updates.status = status;
+    if (req.file) {
+      const uploaded = await uploadToCloudinary(req.file.buffer, 'exotic-fruits/categories');
+      updates.image = uploaded.url;
+    }
     await category.update(updates);
     return sendSuccess(res, 200, category, 'Category updated');
   } catch (err) {

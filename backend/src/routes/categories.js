@@ -9,8 +9,9 @@ const { validate } = require('../middleware/validation');
 
 router.get('/', getCategories);
 router.get('/:id', getCategory);
-router.post('/', protect, adminOnly, categoryValidators, validate, createCategory);
-router.put('/:id', protect, adminOnly, updateCategory);
+const upload = require('../middleware/upload');
+router.post('/', protect, adminOnly, upload.single('image'), categoryValidators, validate, createCategory);
+router.put('/:id', protect, adminOnly, upload.single('image'), updateCategory);
 router.delete('/:id', protect, adminOnly, deleteCategory);
 
 module.exports = router;

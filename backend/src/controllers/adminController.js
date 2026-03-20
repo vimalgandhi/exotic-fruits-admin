@@ -41,9 +41,16 @@ const getAdminProducts = async (req, res, next) => {
     const { count, rows } = await Product.findAndCountAll({
       order: [['createdAt', 'DESC']],
       limit,
-      offset
+      offset,
+      include: [{ model: require('../models/Category'), as: 'category', attributes: ['id', 'name'] }]
     });
-    return res.json({ success: true, data: rows, pagination: { total: count, page, limit, pages: Math.ceil(count / limit) } });
+    // Flatten category_name in each product
+    const products = rows.map(product => {
+      const p = product.toJSON();
+      p.category_name = p.category ? p.category.name : null;
+      return p;
+    });
+    return res.json({ success: true, data: products, pagination: { total: count, page, limit, pages: Math.ceil(count / limit) } });
   } catch (err) {
     next(err);
   }

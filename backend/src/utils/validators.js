@@ -26,8 +26,6 @@ const loginValidators = [
 
 const productValidators = [
   body('name').trim().notEmpty().withMessage('Product name is required').isLength({ max: 200 }).withMessage('Name too long'),
-  body('price').isFloat({ min: 0 }).withMessage('Price must be a positive number'),
-  body('stock').optional().isInt({ min: 0 }).withMessage('Stock must be a non-negative integer')
 ];
 
 const categoryValidators = [
