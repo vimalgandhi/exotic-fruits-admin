@@ -31,7 +31,7 @@ const registerUser = async (req, res, next) => {
     return sendSuccess(res, 201, {
       accessToken,
       refreshToken,
-      user: { id: user.id, email: user.email, name: user.name, role: user.role }
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, phone: user.phone }
     }, 'Registration successful');
   } catch (err) {
     next(err);

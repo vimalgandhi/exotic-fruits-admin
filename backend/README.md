@@ -161,3 +161,6 @@ backend/
 ├── server.js           # Entry point
 └── README.md
 ```
+
+# Run migration Cmd:
+npx sequelize-cli db:migrate

@@ -30,6 +30,11 @@ const Order = sequelize.define('Order', {
   delivery_address: {
     type: DataTypes.TEXT,
     allowNull: true
+  },
+  tamper_detected: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    comment: 'Flag to indicate potential price tampering attempt'
   }
 }, {
   tableName: 'orders',
