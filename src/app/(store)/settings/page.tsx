@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useAuth } from '@/hooks/useAuth'
+import { useProfile } from '@/hooks/useProfile'
 import { toast } from 'sonner'
 
 const profileSchema = z.object({
@@ -30,6 +31,7 @@ type PasswordForm = z.infer<typeof passwordSchema>
 
 export default function SettingsPage() {
   const { user, isAuthenticated } = useAuth()
+  const { updateProfile, updatePassword } = useProfile()
   const router = useRouter()
 
   useEffect(() => {
@@ -60,16 +62,22 @@ export default function SettingsPage() {
   })
 
   const onProfileSubmit = async (data: ProfileForm) => {
-    await new Promise((r) => setTimeout(r, 500))
-    toast.success('Profile updated successfully!')
-    console.log(data)
+    try {
+      await updateProfile(data as Record<string, unknown>)
+      toast.success('Profile updated successfully!')
+    } catch {
+      toast.error('Failed to update profile. Please try again.')
+    }
   }
 
   const onPasswordSubmit = async (data: PasswordForm) => {
-    await new Promise((r) => setTimeout(r, 500))
-    toast.success('Password changed successfully!')
-    resetPassword()
-    console.log(data)
+    try {
+      await updatePassword(data.currentPassword, data.newPassword)
+      toast.success('Password changed successfully!')
+      resetPassword()
+    } catch {
+      toast.error('Failed to change password. Please try again.')
+    }
   }
 
   if (!isAuthenticated) return null

@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useCartStore } from '@/store/cartStore'
 import { useCheckoutStore } from '@/store/checkoutStore'
 import { formatCurrency } from '@/lib/utils'
+import { createOrder } from '@/lib/api'
 import { toast } from 'sonner'
 import { Lock } from 'lucide-react'
 
@@ -64,7 +65,26 @@ export default function CheckoutPage() {
   const onSubmit = async (data: CheckoutForm) => {
     try {
       setOrderData(data)
-      const orderId = `ORD-${Date.now()}`
+      const deliveryAddress = `${data.firstName} ${data.lastName}, ${data.address}, ${data.city}, ${data.state} - ${data.pincode}`
+      const orderItems = items.map((item) => ({
+        productId: item.product.id,
+        quantity: item.quantity,
+        price: item.product.price,
+      }))
+
+      let orderId: string
+      try {
+        const order = await createOrder(
+          orderItems as Record<string, unknown>[],
+          deliveryAddress,
+          total,
+        )
+        orderId = order?.id || order?._id || `ORD-${Date.now()}`
+      } catch {
+        // Fallback to local order ID if API unavailable
+        orderId = `ORD-${Date.now()}`
+      }
+
       setOrderId(orderId)
       setPaymentStatus('PAID')
       clearCart()

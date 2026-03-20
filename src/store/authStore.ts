@@ -1,13 +1,20 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { User } from '@/types'
+import { loginUser, registerUser, logoutUser as logoutAPI } from '@/lib/api'
 
 interface AuthState {
   user: User | null
   isAuthenticated: boolean
   loading: boolean
   login: (email: string, password: string) => Promise<void>
-  logout: () => void
+  register: (
+    name: string,
+    email: string,
+    phone: string,
+    password: string,
+  ) => Promise<void>
+  logout: () => Promise<void>
   setUser: (user: User) => void
   checkAuth: () => void
 }
@@ -37,17 +44,39 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
       loading: false,
-      login: async (email: string, _password: string) => {
+      login: async (email: string, password: string) => {
         set({ loading: true })
         try {
-          const user: User = { id: '1', name: 'John Doe', email, role: 'CUSTOMER' }
+          const data = await loginUser(email, password)
+          const user: User = data.user
           set({ user, isAuthenticated: true })
           setAuthCookie(btoa(JSON.stringify({ id: user.id, email: user.email })))
         } finally {
           set({ loading: false })
         }
       },
-      logout: () => {
+      register: async (
+        name: string,
+        email: string,
+        phone: string,
+        password: string,
+      ) => {
+        set({ loading: true })
+        try {
+          const data = await registerUser(name, email, phone, password)
+          const user: User = data.user
+          set({ user, isAuthenticated: true })
+          setAuthCookie(btoa(JSON.stringify({ id: user.id, email: user.email })))
+        } finally {
+          set({ loading: false })
+        }
+      },
+      logout: async () => {
+        try {
+          await logoutAPI()
+        } catch (error) {
+          console.error('Logout error:', error)
+        }
         clearAuthCookie()
         set({ user: null, isAuthenticated: false })
       },

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useMemo } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -13,159 +13,69 @@ import { ShoppingCart, Heart } from "lucide-react";
 import { useCartStore } from "@/store/cartStore";
 import { useWishlist } from "@/hooks/useWishlist";
 import { toast } from "sonner";
-import { Product } from "@/types";
-import {
-  filterByPrice,
-  filterByCategory,
-  sortProducts,
-  paginateProducts,
-} from "@/lib/productFilters";
+import { getAllProducts } from "@/lib/api";
 import type { SortOptionValue } from "@/types";
 
-const ALL_PRODUCTS: Product[] = [
-  {
-    id: "1",
-    name: "Dragon Fruit",
-    slug: "dragon-fruit",
-    price: 299,
-    image: "https://images.unsplash.com/photo-1500622944204-b135684e99fd?w=400",
-    category: "Tropical",
-    stock: "In Stock",
-    description:
-      "Beautiful pink dragon fruit with white flesh and delicate flavor.",
-    origin: "Vietnam",
-  },
-  {
-    id: "2",
-    name: "Passion Fruit",
-    slug: "passion-fruit",
-    price: 199,
-    image: "https://images.unsplash.com/photo-1501746877-14782df58970?w=400",
-    category: "Tropical",
-    stock: "In Stock",
-    description: "Sweet and tangy passion fruit bursting with tropical flavor.",
-    origin: "Brazil",
-  },
-  {
-    id: "3",
-    name: "Star Fruit",
-    slug: "star-fruit",
-    price: 149,
-    image: "https://images.unsplash.com/photo-1587393855524-087f83d95bc9?w=400",
-    category: "Tropical",
-    stock: "In Stock",
-    description:
-      "Crispy and refreshing star-shaped fruit with mild sweet taste.",
-    origin: "Malaysia",
-  },
-  {
-    id: "4",
-    name: "Rambutan",
-    slug: "rambutan",
-    price: 249,
-    image: "https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=400",
-    category: "Tropical",
-    stock: "In Stock",
-    description: "Sweet rambutan with juicy white flesh and a hairy red skin.",
-    origin: "Thailand",
-  },
-  {
-    id: "5",
-    name: "Jackfruit",
-    slug: "jackfruit",
-    price: 399,
-    image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400",
-    category: "Tropical",
-    stock: "In Stock",
-    description: "Large tropical fruit with sweet yellow pods.",
-    origin: "India",
-  },
-  {
-    id: "6",
-    name: "Mangosteen",
-    slug: "mangosteen",
-    price: 499,
-    image: "https://images.unsplash.com/photo-1604491637479-ce95ee0fc9cf?w=400",
-    category: "Tropical",
-    stock: "Out of Stock",
-    description: "The queen of fruits with sweet white segments.",
-    origin: "Thailand",
-  },
-  {
-    id: "7",
-    name: "Lychee",
-    slug: "lychee",
-    price: 349,
-    image: "https://images.unsplash.com/photo-1568702846914-96b305d2aaeb?w=400",
-    category: "Asian",
-    stock: "In Stock",
-    description: "Sweet and juicy lychee with fragrant white flesh.",
-    origin: "China",
-  },
-  {
-    id: "8",
-    name: "Durian",
-    slug: "durian",
-    price: 799,
-    image: "https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=400",
-    category: "Asian",
-    stock: "In Stock",
-    description: "The king of fruits with creamy, rich custard-like flesh.",
-    origin: "Malaysia",
-  },
-  {
-    id: "9",
-    name: "Durian",
-    slug: "durian",
-    price: 799,
-    image: "https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=400",
-    category: "Asian",
-    stock: "In Stock",
-    description: "The king of fruits with creamy, rich custard-like flesh.",
-    origin: "Malaysia",
-  },
-  {
-    id: "10",
-    name: "Durian",
-    slug: "durian",
-    price: 799,
-    image: "https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=400",
-    category: "Asian",
-    stock: "In Stock",
-    description: "The king of fruits with creamy, rich custard-like flesh.",
-    origin: "Malaysia",
-  },
-  {
-    id: "11",
-    name: "Durian",
-    slug: "durian",
-    price: 799,
-    image: "https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=400",
-    category: "Asian",
-    stock: "In Stock",
-    description: "The king of fruits with creamy, rich custard-like flesh.",
-    origin: "Malaysia",
-  },
-  {
-    id: "12",
-    name: "Durian",
-    slug: "durian",
-    price: 799,
-    image: "https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=400",
-    category: "Asian",
-    stock: "In Stock",
-    description: "The king of fruits with creamy, rich custard-like flesh.",
-    origin: "Malaysia",
-  },
-];
-
 const ITEMS_PER_PAGE = 6;
+
+interface ApiProduct {
+  id: string;
+  name: string;
+  slug: string;
+  price: number;
+  image: string;
+  category: string;
+  stock: string;
+  description: string;
+  origin: string;
+}
+
+function normalizeProduct(p: any): ApiProduct {
+  return {
+    id: p.id || p.productid || String(p._id || Math.random()),
+    name: p.name || p.productName || "",
+    slug: p.slug || p.id || p.productid || "",
+    price: Number(p.price) || 0,
+    image: p.image || p.imageUrl || "",
+    category: p.category || p.categoryName || "",
+    stock: p.stock || p.stkStatus || "In Stock",
+    description: p.description || "",
+    origin: p.origin || p.originCountry || "",
+  };
+}
+
+function mapSortToApiParams(sort: SortOptionValue): {
+  sortBy: string;
+  order: string;
+} {
+  switch (sort) {
+    case "price-asc":
+      return { sortBy: "price", order: "asc" };
+    case "price-desc":
+      return { sortBy: "price", order: "desc" };
+    case "name-asc":
+      return { sortBy: "name", order: "asc" };
+    case "name-desc":
+      return { sortBy: "name", order: "desc" };
+    case "newest":
+      return { sortBy: "createdAt", order: "desc" };
+    case "popular":
+      return { sortBy: "popular", order: "desc" };
+    default:
+      return { sortBy: "name", order: "asc" };
+  }
+}
 
 function ProductsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const addItem = useCartStore((s) => s.addItem);
   const { toggleWishlist, isInWishlist } = useWishlist();
+
+  const [products, setProducts] = useState<ApiProduct[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   // Parse URL params
   const search = searchParams.get("search") || "";
@@ -183,6 +93,45 @@ function ProductsContent() {
     ? categoryParam.split(",").filter(Boolean)
     : [];
   const currentPage = Math.max(1, parseInt(searchParams.get("page") || "1"));
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true);
+      try {
+        const { sortBy, order } = mapSortToApiParams(sort);
+        const category = selectedCategories.join(",");
+        const raw = await getAllProducts(
+          currentPage,
+          ITEMS_PER_PAGE,
+          search,
+          category,
+          sortBy,
+          order,
+          priceMin ?? undefined,
+          priceMax ?? undefined,
+        );
+        const items: any[] = Array.isArray(raw)
+          ? raw
+          : raw?.products || raw?.items || [];
+        const pages: number = raw?.totalPages || raw?.pagination?.totalPages || 1;
+        const total: number =
+          raw?.totalItems ||
+          raw?.pagination?.totalItems ||
+          raw?.total ||
+          items.length;
+        setProducts(items.map(normalizeProduct));
+        setTotalPages(pages);
+        setTotalItems(total);
+      } catch (err) {
+        console.error("Failed to fetch products:", err);
+        toast.error("Failed to load products");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [search, sort, currentPage, categoryParam, priceMin, priceMax]);
 
   const handleSearchChange = useCallback(
     (value: string) => {
@@ -211,35 +160,25 @@ function ProductsContent() {
     [searchParams, router],
   );
 
-  // Filter, sort, and paginate products
-  const processedProducts = useMemo(() => {
-    let result = ALL_PRODUCTS;
-
-    if (search) {
-      result = result.filter((p) =>
-        p.name.toLowerCase().includes(search.toLowerCase()),
-      );
-    }
-
-    result = filterByPrice(result, priceMin, priceMax);
-    result = filterByCategory(result, selectedCategories);
-    result = sortProducts(result, sort);
-
-    return result;
-  }, [search, sort, priceMin, priceMax, selectedCategories]);
-
-  const {
-    items: paginated,
-    totalPages,
-    totalItems,
-  } = paginateProducts(processedProducts, currentPage, ITEMS_PER_PAGE);
-
-  const handleAddToCart = (product: Product) => {
+  const handleAddToCart = (product: ApiProduct) => {
     if (product.stock === "Out of Stock") {
       toast.error("Product is out of stock");
       return;
     }
-    addItem(product, 1);
+    addItem(
+      {
+        id: product.id,
+        name: product.name,
+        slug: product.slug,
+        price: product.price,
+        image: product.image,
+        category: product.category,
+        stock: product.stock as "In Stock" | "Out of Stock",
+        description: product.description,
+        origin: product.origin,
+      },
+      1,
+    );
     toast.success(`${product.name} added to cart!`);
   };
 
@@ -273,8 +212,14 @@ function ProductsContent() {
             <ProductSort />
           </div>
 
-          {/* Product grid */}
-          {paginated.length === 0 ? (
+          {/* Loading skeleton */}
+          {loading ? (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+              {Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => (
+                <div key={i} className="h-64 animate-pulse rounded-xl bg-gray-200" />
+              ))}
+            </div>
+          ) : products.length === 0 ? (
             <EmptyState
               title="No products found"
               description="Try adjusting your search or filter criteria."
@@ -282,7 +227,7 @@ function ProductsContent() {
           ) : (
             <>
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
-                {paginated.map((product) => (
+                {products.map((product) => (
                   <div
                     key={product.id}
                     className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
@@ -290,12 +235,18 @@ function ProductsContent() {
                     <div className="relative">
                       <Link href={`/products/${product.slug}`}>
                         <div className="relative h-48 overflow-hidden">
-                          <Image
-                            src={product.image}
-                            alt={product.name}
-                            fill
-                            className="object-cover transition-transform duration-300 hover:scale-105"
-                          />
+                          {product.image ? (
+                            <Image
+                              src={product.image}
+                              alt={product.name}
+                              fill
+                              className="object-cover transition-transform duration-300 hover:scale-105"
+                            />
+                          ) : (
+                            <div className="flex h-full items-center justify-center bg-gray-100 text-4xl">
+                              🍑
+                            </div>
+                          )}
                           {product.stock === "Out of Stock" && (
                             <div className="absolute inset-0 flex items-center justify-center bg-black/40">
                               <span className="rounded bg-white px-3 py-1 text-sm font-medium text-error">
@@ -307,7 +258,19 @@ function ProductsContent() {
                       </Link>
                       {/* Heart / wishlist button */}
                       <button
-                        onClick={() => toggleWishlist(product)}
+                        onClick={() =>
+                          toggleWishlist({
+                            id: product.id,
+                            name: product.name,
+                            slug: product.slug,
+                            price: product.price,
+                            image: product.image,
+                            category: product.category,
+                            stock: product.stock as "In Stock" | "Out of Stock",
+                            description: product.description,
+                            origin: product.origin,
+                          })
+                        }
                         aria-label={
                           isInWishlist(product.id)
                             ? "Remove from wishlist"

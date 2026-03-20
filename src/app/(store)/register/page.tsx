@@ -9,18 +9,19 @@ import { toast } from 'sonner'
 export default function RegisterPage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
-  const { login, loading } = useAuth()
+  const { register, loading } = useAuth()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name || !email || !password) {
+    if (!name || !email || !phone || !password) {
       toast.error('Please fill in all fields')
       return
     }
     try {
-      await login(email, password)
+      await register(name, email, phone, password)
       toast.success('Account created successfully!')
       router.push('/')
     } catch {
@@ -57,6 +58,19 @@ export default function RegisterPage() {
               onChange={(e) => setEmail(e.target.value)}
               className="input-field"
               placeholder="john@example.com"
+              required
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Phone Number
+            </label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="input-field"
+              placeholder="9876543210"
               required
             />
           </div>

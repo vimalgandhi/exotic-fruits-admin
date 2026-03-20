@@ -1,54 +1,50 @@
+'use client'
+
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { getAllProducts } from '@/lib/api'
 
-const FEATURED_PRODUCTS = [
-  {
-    id: '1',
-    name: 'Dragon Fruit',
-    slug: 'dragon-fruit',
-    price: 299,
-    image: 'https://images.unsplash.com/photo-1500622944204-b135684e99fd?w=400',
-    category: 'Tropical',
-    stock: 'In Stock' as const,
-    description: 'Beautiful pink dragon fruit with white flesh.',
-    origin: 'Vietnam',
-  },
-  {
-    id: '2',
-    name: 'Passion Fruit',
-    slug: 'passion-fruit',
-    price: 199,
-    image: 'https://images.unsplash.com/photo-1501746877-14782df58970?w=400',
-    category: 'Tropical',
-    stock: 'In Stock' as const,
-    description: 'Sweet and tangy passion fruit.',
-    origin: 'Brazil',
-  },
-  {
-    id: '3',
-    name: 'Star Fruit',
-    slug: 'star-fruit',
-    price: 149,
-    image: 'https://images.unsplash.com/photo-1587393855524-087f83d95bc9?w=400',
-    category: 'Tropical',
-    stock: 'In Stock' as const,
-    description: 'Crispy and refreshing star fruit.',
-    origin: 'Malaysia',
-  },
-  {
-    id: '4',
-    name: 'Rambutan',
-    slug: 'rambutan',
-    price: 249,
-    image: 'https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=400',
-    category: 'Tropical',
-    stock: 'In Stock' as const,
-    description: 'Sweet rambutan with juicy white flesh.',
-    origin: 'Thailand',
-  },
-]
+interface FeaturedProduct {
+  id: string
+  name: string
+  slug: string
+  price: number
+  image: string
+  category: string
+  stock: string
+  origin: string
+}
+
+function normalizeFeaturedProduct(p: any): FeaturedProduct {
+  return {
+    id: p.id || p.productid || String(Math.random()),
+    name: p.name || p.productName || '',
+    slug: p.slug || p.id || p.productid || '',
+    price: p.price ?? 0,
+    image: p.image || p.imageUrl || '',
+    category: p.category || p.categoryName || '',
+    stock: p.stock || p.stkStatus || 'In Stock',
+    origin: p.origin || p.originCountry || '',
+  }
+}
 
 export default function HomePage() {
+  const [featuredProducts, setFeaturedProducts] = useState<FeaturedProduct[]>([])
+  const [loadingProducts, setLoadingProducts] = useState(true)
+
+  useEffect(() => {
+    getAllProducts(1, 4)
+      .then((data) => {
+        const raw: any[] = Array.isArray(data)
+          ? data
+          : data?.products || data?.items || []
+        setFeaturedProducts(raw.slice(0, 4).map(normalizeFeaturedProduct))
+      })
+      .catch((err) => console.error('Failed to fetch featured products:', err))
+      .finally(() => setLoadingProducts(false))
+  }, [])
+
   return (
     <div>
       {/* Hero Section */}
@@ -109,39 +105,55 @@ export default function HomePage() {
               Explore our handpicked selection of exotic fruits
             </p>
           </div>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {FEATURED_PRODUCTS.map((product) => (
-              <Link key={product.id} href={`/products/${product.slug}`}>
-                <div className="group overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md">
-                  <div className="relative h-48 overflow-hidden">
-                    <Image
-                      src={product.image}
-                      alt={product.name}
-                      fill
-                      className="object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                  </div>
-                  <div className="p-4">
-                    <span className="text-xs font-medium text-gold">
-                      {product.category}
-                    </span>
-                    <h3 className="mt-1 font-semibold text-navy">
-                      {product.name}
-                    </h3>
-                    <p className="mt-1 text-sm text-gray-500">{product.origin}</p>
-                    <div className="mt-3 flex items-center justify-between">
-                      <span className="text-lg font-bold text-navy">
-                        ₹{product.price}
+          {loadingProducts ? (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-64 animate-pulse rounded-xl bg-gray-200" />
+              ))}
+            </div>
+          ) : featuredProducts.length > 0 ? (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {featuredProducts.map((product) => (
+                <Link key={product.id} href={`/products/${product.slug}`}>
+                  <div className="group overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+                    <div className="relative h-48 overflow-hidden">
+                      {product.image ? (
+                        <Image
+                          src={product.image}
+                          alt={product.name}
+                          fill
+                          className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center bg-gray-100 text-4xl">
+                          🍑
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <span className="text-xs font-medium text-gold">
+                        {product.category}
                       </span>
-                      <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-success">
-                        {product.stock}
-                      </span>
+                      <h3 className="mt-1 font-semibold text-navy">
+                        {product.name}
+                      </h3>
+                      <p className="mt-1 text-sm text-gray-500">{product.origin}</p>
+                      <div className="mt-3 flex items-center justify-between">
+                        <span className="text-lg font-bold text-navy">
+                          ₹{product.price}
+                        </span>
+                        <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-success">
+                          {product.stock}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </Link>
-            ))}
-          </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="text-center text-gray-500">No featured products available.</p>
+          )}
           <div className="mt-10 text-center">
             <Link
               href="/products"
