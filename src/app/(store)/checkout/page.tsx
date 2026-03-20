@@ -69,7 +69,11 @@ export default function CheckoutPage() {
       const orderItems = items.map((item) => ({
         productId: item.product.id,
         quantity: item.quantity,
-        price: item.product.price,
+        // Send the ACTUAL price used (discounted if unit selected, otherwise base)
+        price: item.selectedUnit 
+          ? item.selectedUnit.afterDiscountPrice 
+          : item.product.price,
+        selectedUnit: item.selectedUnit, // Include selected unit info for validation
       }))
 
       let orderId: string

@@ -268,12 +268,16 @@ export async function getOrder(id: string) {
 export async function createOrder(
   items: Record<string, unknown>[],
   deliveryAddress: string,
-  totalAmount: number,
+  clientTotal: number,
 ) {
   const response = await fetch(`${API_URL}/orders`, {
     method: "POST",
     headers: getAuthHeaders(),
-    body: JSON.stringify({ items, deliveryAddress, totalAmount }),
+    body: JSON.stringify({ 
+      items, // Send frontend items (backend will validate prices against DB)
+      delivery_address: deliveryAddress,
+      clientTotal, // Send frontend-calculated total for tamper detection
+    }),
   });
   if (!response.ok) throw new Error("Failed to create order");
   const data = await response.json();
