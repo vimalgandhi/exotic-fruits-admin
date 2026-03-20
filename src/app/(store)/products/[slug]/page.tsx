@@ -3,36 +3,76 @@
 import { use, useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ShoppingCart, ArrowLeft, Star, Truck, Shield, Heart } from 'lucide-react'
+import { ShoppingCart, ArrowLeft, Star, Truck, Heart, CheckCircle } from 'lucide-react'
 import { useCartStore } from '@/store/cartStore'
-import { useWishlist } from '@/hooks/useWishlist'
 import { toast } from 'sonner'
 import { notFound } from 'next/navigation'
-import { getProduct, getAllProducts } from '@/lib/api'
+import { getProduct, getAllProducts, toggleWishlist } from '@/lib/api'
+
+interface PriceOption {
+  unitId: number
+  unitName: string
+  unitPrice: number
+  discountType: string
+  discount: string
+  afterDiscountPrice: number
+  isactive: boolean
+}
 
 interface ProductData {
   id: string
   name: string
   slug: string
-  price: number
+  price?: number
   image: string
-  category: string
-  stock: string
+  category?: string
+  stock?: string
+  stockStatus?: string
   description: string
   origin: string
+  originCountry?: string
+  pricelist?: PriceOption[]
+  seoMetaTitle?: string
+  seoMetaDescription?: string
+  seoAlt?: string
+  featured?: boolean
+  foodType?: string
+  status?: string
+  inWishlist?: boolean
 }
 
 function normalizeProduct(p: any): ProductData {
+  let pricelist: PriceOption[] = []
+  if (p.pricelist) {
+    try {
+      pricelist = typeof p.pricelist === 'string' ? JSON.parse(p.pricelist) : p.pricelist
+    } catch {
+      pricelist = []
+    }
+  }
+
+  const firstPrice = pricelist.length > 0 ? pricelist[0].afterDiscountPrice : Number(p.price) || 0
+
   return {
     id: p.id || p.productid || String(p._id || ''),
     name: p.name || p.productName || '',
     slug: p.slug || p.id || p.productid || '',
-    price: Number(p.price) || 0,
+    price: firstPrice,
     image: p.image || p.imageUrl || '',
-    category: p.category || p.categoryName || '',
-    stock: p.stock || p.stkStatus || 'In Stock',
+    category: p.category?.name || p.category || p.categoryName || '',
+    stock: p.stockStatus || p.stock || p.stkStatus || 'In Stock',
+    stockStatus: p.stockStatus || p.stock || 'In Stock',
     description: p.description || '',
-    origin: p.origin || p.originCountry || '',
+    origin: p.originCountry || p.origin || '',
+    originCountry: p.originCountry,
+    pricelist,
+    seoMetaTitle: p.seoMetaTitle,
+    seoMetaDescription: p.seoMetaDescription,
+    seoAlt: p.seoAlt,
+    featured: p.featured,
+    foodType: p.foodType,
+    status: p.status,
+    inWishlist: p.inWishlist || false,
   }
 }
 
@@ -47,9 +87,10 @@ export default function ProductDetailPage({
   const [related, setRelated] = useState<ProductData[]>([])
   const [loading, setLoading] = useState(true)
   const [quantity, setQuantity] = useState(1)
+  const [selectedPriceIndex, setSelectedPriceIndex] = useState(0)
+  const [inWishlist, setInWishlist] = useState(false)
 
   const addItem = useCartStore((s) => s.addItem)
-  const { toggleWishlist, isInWishlist } = useWishlist()
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -62,6 +103,7 @@ export default function ProductDetailPage({
         }
         const normalized = normalizeProduct(data)
         setProduct(normalized)
+        setInWishlist(normalized.inWishlist || false)
 
         // Fetch related products from the same category
         try {
@@ -90,25 +132,31 @@ export default function ProductDetailPage({
 
   const handleAddToCart = () => {
     if (!product) return
-    if (product.stock === 'Out of Stock') {
+    const isOutOfStock = product.stockStatus === 'Out of Stock' || product.stock === 'Out of Stock'
+    if (isOutOfStock) {
       toast.error('Product is out of stock')
       return
     }
+
+    const selectedPrice = product.pricelist?.[selectedPriceIndex]
+    const cartPrice = selectedPrice?.afterDiscountPrice || product.price || 0
+    const cartUnit = selectedPrice?.unitName || 'Unit'
+
     addItem(
       {
         id: product.id,
         name: product.name,
         slug: product.slug,
-        price: product.price,
+        price: cartPrice,
         image: product.image,
-        category: product.category,
-        stock: product.stock as 'In Stock' | 'Out of Stock',
+        category: product.category || '',
+        stock: (product.stockStatus || product.stock) as 'In Stock' | 'Out of Stock',
         description: product.description,
         origin: product.origin,
       },
       quantity,
     )
-    toast.success(`${product.name} (×${quantity}) added to cart!`)
+    toast.success(`${product.name} (${cartUnit} × ${quantity}) added to cart!`)
   }
 
   if (loading) {
@@ -171,18 +219,57 @@ export default function ProductDetailPage({
             <span className="text-sm text-gray-500">(4.8 / 5.0)</span>
           </div>
 
-          <p className="mt-4 text-4xl font-bold text-navy">₹{product.price}</p>
-          <p className="mt-1 text-sm text-gray-500">per 500g</p>
+          {/* Pricing Section */}
+          {product.pricelist && product.pricelist.length > 0 ? (
+            <div className="mt-6">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {product.pricelist.map((option, idx) => (
+                  <button
+                    key={option.unitId}
+                    onClick={() => setSelectedPriceIndex(idx)}
+                    className={`rounded-lg border-2 p-4 transition-all ${
+                      selectedPriceIndex === idx
+                        ? 'border-navy bg-navy bg-opacity-5'
+                        : 'border-gray-200 hover:border-navy'
+                    }`}
+                  >
+                    <div className="text-left">
+                      <p className="text-sm font-medium text-gray-600">
+                        {option.unitName}
+                      </p>
+                      <div className="mt-2 flex items-baseline gap-2">
+                        <span className="text-2xl font-bold text-navy">
+                          ₹{option.afterDiscountPrice}
+                        </span>
+                        {option.discount && (
+                          <>
+                            <span className="text-sm text-gray-400 line-through">
+                              ₹{option.unitPrice}
+                            </span>
+                            <span className="rounded-full bg-red-100 px-2 py-1 text-xs font-semibold text-red-600">
+                              {option.discount}% off
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="mt-4 text-4xl font-bold text-navy">₹{product.price}</p>
+          )}
 
           <div className="mt-3">
             <span
               className={`rounded-full px-3 py-1 text-sm font-medium ${
-                product.stock === 'In Stock'
+                product.stockStatus === 'In Stock' || product.stock === 'In Stock'
                   ? 'bg-green-100 text-success'
                   : 'bg-red-100 text-error'
               }`}
             >
-              {product.stock}
+              {product.stockStatus || product.stock}
             </span>
           </div>
 
@@ -214,28 +301,27 @@ export default function ProductDetailPage({
           <div className="mt-6 flex gap-3">
             <button
               onClick={handleAddToCart}
-              disabled={product.stock === 'Out of Stock'}
+              disabled={
+                product.stockStatus === 'Out of Stock' ||
+                product.stock === 'Out of Stock'
+              }
               className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-navy py-3 font-semibold text-white transition-colors hover:bg-blue-900 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <ShoppingCart size={20} />
               Add to Cart
             </button>
             <button
-              onClick={() =>
-                toggleWishlist({
-                  id: product.id,
-                  name: product.name,
-                  slug: product.slug,
-                  price: product.price,
-                  image: product.image,
-                  category: product.category,
-                  stock: product.stock as 'In Stock' | 'Out of Stock',
-                  description: product.description,
-                  origin: product.origin,
-                })
-              }
+              onClick={async () => {
+                setInWishlist(!inWishlist)
+                try {
+                  await toggleWishlist(product.id)
+                } catch {
+                  setInWishlist(inWishlist)
+                  toast.error('Failed to update wishlist')
+                }
+              }}
               aria-label={
-                isInWishlist(product.id)
+                inWishlist
                   ? 'Remove from wishlist'
                   : 'Add to wishlist'
               }
@@ -244,7 +330,7 @@ export default function ProductDetailPage({
               <Heart
                 size={22}
                 className={
-                  isInWishlist(product.id)
+                  inWishlist
                     ? 'fill-red-500 text-red-500'
                     : 'text-gray-400'
                 }
@@ -262,7 +348,7 @@ export default function ProductDetailPage({
               </div>
             </div>
             <div className="flex items-center gap-3 rounded-lg border p-3">
-              <Shield size={20} className="text-gold" />
+              <CheckCircle size={20} className="text-gold" />
               <div>
                 <p className="text-sm font-medium">Fresh Guarantee</p>
                 <p className="text-xs text-gray-500">100% fresh or refund</p>

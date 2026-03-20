@@ -4,17 +4,23 @@ import { useState, useEffect } from 'react'
 import { SlidersHorizontal, X } from 'lucide-react'
 import { useProductFilters } from '@/hooks/useProductFilters'
 
-const CATEGORIES = ['Tropical', 'Asian', 'Citrus', 'Berries']
 const PRICE_MIN = 0
 const PRICE_MAX = 1000
 
 function FiltersPanel({
   onClose,
+  categories: categoriesFromProps,
+  categoryIdMap = {},
 }: {
   onClose?: () => void
+  categories?: Array<{ id: string; name: string }>
+  categoryIdMap?: { [key: string]: string }
 }) {
   const { priceMin, priceMax, categories, updateFilters, clearFilters } =
     useProductFilters()
+  
+  // Use props categories if provided, otherwise fallback to empty
+  const categoryOptions = categoriesFromProps || []
 
   const [localMin, setLocalMin] = useState<number>(priceMin ?? PRICE_MIN)
   const [localMax, setLocalMax] = useState<number>(priceMax ?? PRICE_MAX)
@@ -129,29 +135,34 @@ function FiltersPanel({
       <div>
         <h3 className="mb-3 font-semibold text-navy">Category</h3>
         <ul className="space-y-2">
-          {CATEGORIES.map((cat) => {
-            const checked = categories.includes(cat)
-            return (
-              <li key={cat}>
-                <label className="flex cursor-pointer items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={(e) => handleCategoryChange(cat, e.target.checked)}
-                    className="h-4 w-4 rounded border-gray-300 accent-navy"
-                    aria-label={`Filter by ${cat}`}
-                  />
-                  <span
-                    className={
-                      checked ? 'font-medium text-navy' : 'text-gray-700'
-                    }
-                  >
-                    {cat}
-                  </span>
-                </label>
-              </li>
-            )
-          })}
+          {categoryOptions.length > 0 ? (
+            categoryOptions.map((cat) => {
+              const catName = typeof cat === 'string' ? cat : cat.name;
+              const checked = categories.includes(catName);
+              return (
+                <li key={cat.id || catName}>
+                  <label className="flex cursor-pointer items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(e) => handleCategoryChange(catName, e.target.checked)}
+                      className="h-4 w-4 rounded border-gray-300 accent-navy"
+                      aria-label={`Filter by ${catName}`}
+                    />
+                    <span
+                      className={
+                        checked ? 'font-medium text-navy' : 'text-gray-700'
+                      }
+                    >
+                      {catName}
+                    </span>
+                  </label>
+                </li>
+              )
+            })
+          ) : (
+            <p className="text-xs text-gray-500">Loading categories...</p>
+          )}
         </ul>
       </div>
 
@@ -170,13 +181,25 @@ function FiltersPanel({
 
 interface ProductFiltersProps {
   variant?: 'sidebar' | 'mobile'
+  categories?: Array<{ id: string; name: string }>
+  categoryIdMap?: { [key: string]: string }
 }
 
-export function ProductFilters({ variant = 'sidebar' }: ProductFiltersProps) {
+export function ProductFilters({ variant = 'sidebar', categories: categoriesFromProps = [], categoryIdMap = {} }: ProductFiltersProps) {
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [isClosing, setIsClosing] = useState(false)
   const { categories, priceMin, priceMax } = useProductFilters()
   const activeCount =
     categories.length + (priceMin !== null || priceMax !== null ? 1 : 0)
+
+  // Handle drawer close with animation
+  const handleClose = () => {
+    setIsClosing(true)
+    setTimeout(() => {
+      setDrawerOpen(false)
+      setIsClosing(false)
+    }, 300)
+  }
 
   if (variant === 'mobile') {
     return (
@@ -202,30 +225,30 @@ export function ProductFilters({ variant = 'sidebar' }: ProductFiltersProps) {
             aria-modal="true"
             aria-label="Product filters"
           >
-            {/* Overlay */}
+            {/* Overlay with fade animation */}
             <div
-              className="absolute inset-0 bg-black/50"
-              onClick={() => setDrawerOpen(false)}
+              className="absolute inset-0 bg-black/50 transition-opacity duration-300"
+              onClick={handleClose}
             />
-            {/* Drawer */}
-            <div className="relative w-80 max-w-full overflow-y-auto bg-white p-6 shadow-xl">
+            {/* Drawer with slide-in/slide-out animation */}
+            <div className={`relative w-80 max-w-full overflow-y-auto bg-white p-6 shadow-xl transition-transform duration-300 ${isClosing ? 'drawer-slide-out' : 'drawer-slide-in'}`}>
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="font-semibold text-navy">Filters</h2>
                 <button
-                  onClick={() => setDrawerOpen(false)}
-                  className="rounded p-1 hover:bg-gray-100"
+                  onClick={handleClose}
+                  className="rounded p-1 hover:bg-gray-100 transition-colors"
                   aria-label="Close filters"
                 >
                   <X size={20} />
                 </button>
               </div>
-              <FiltersPanel onClose={() => setDrawerOpen(false)} />
-              <button
-                onClick={() => setDrawerOpen(false)}
-                className="mt-6 w-full rounded bg-navy px-4 py-2 text-white hover:bg-blue-900"
+              <FiltersPanel onClose={handleClose} categories={categoriesFromProps} categoryIdMap={categoryIdMap} />
+              {/* <button
+                onClick={handleClose}
+                className="mt-6 w-full rounded bg-navy px-4 py-2 text-white hover:bg-blue-900 transition-colors"
               >
                 Done
-              </button>
+              </button> */}
             </div>
           </div>
         )}
@@ -236,7 +259,7 @@ export function ProductFilters({ variant = 'sidebar' }: ProductFiltersProps) {
   // sidebar variant
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-4">
-      <FiltersPanel />
+      <FiltersPanel categories={categoriesFromProps} categoryIdMap={categoryIdMap} />
     </div>
   )
 }

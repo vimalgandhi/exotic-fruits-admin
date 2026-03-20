@@ -11,12 +11,26 @@ import { ProductSort } from "@/components/ProductSort";
 import { ProductPagination } from "@/components/ProductPagination";
 import { ShoppingCart, Heart } from "lucide-react";
 import { useCartStore } from "@/store/cartStore";
-import { useWishlist } from "@/hooks/useWishlist";
 import { toast } from "sonner";
-import { getAllProducts } from "@/lib/api";
+import {
+  getAllProducts,
+  toggleWishlist,
+  isAuthenticated,
+  getCategories,
+} from "@/lib/api";
 import type { SortOptionValue } from "@/types";
 
 const ITEMS_PER_PAGE = 6;
+
+interface PriceOption {
+  unitId: number;
+  unitName: string;
+  unitPrice: number;
+  discountType: string;
+  discount: string;
+  afterDiscountPrice: number;
+  isactive: boolean;
+}
 
 interface ApiProduct {
   id: string;
@@ -26,21 +40,48 @@ interface ApiProduct {
   image: string;
   category: string;
   stock: string;
+  stockStatus?: string;
   description: string;
   origin: string;
+  pricelist?: PriceOption[];
+  featured?: boolean;
+  foodType?: string;
+  status?: string;
+  inWishlist?: boolean;
 }
 
 function normalizeProduct(p: any): ApiProduct {
+  let pricelist: PriceOption[] = [];
+  if (p.pricelist) {
+    try {
+      pricelist =
+        typeof p.pricelist === "string" ? JSON.parse(p.pricelist) : p.pricelist;
+    } catch {
+      pricelist = [];
+    }
+  }
+
+  const firstPrice =
+    pricelist.length > 0
+      ? pricelist[0].afterDiscountPrice
+      : Number(p.price) || 0;
+
   return {
     id: p.id || p.productid || String(p._id || Math.random()),
     name: p.name || p.productName || "",
     slug: p.slug || p.id || p.productid || "",
-    price: Number(p.price) || 0,
+    price: firstPrice,
     image: p.image || p.imageUrl || "",
-    category: p.category || p.categoryName || "",
-    stock: p.stock || p.stkStatus || "In Stock",
+    category: p.category?.name || p.category || p.categoryName || "",
+    stock: p.stockStatus || p.stock || p.stkStatus || "In Stock",
+    stockStatus: p.stockStatus || p.stock || "In Stock",
     description: p.description || "",
-    origin: p.origin || p.originCountry || "",
+    origin: p.originCountry || p.origin || "",
+    pricelist,
+    featured: p.featured,
+    foodType: p.foodType,
+    status: p.status,
+    inWishlist: p.inWishlist || false,
   };
 }
 
@@ -70,12 +111,16 @@ function ProductsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const addItem = useCartStore((s) => s.addItem);
-  const { toggleWishlist, isInWishlist } = useWishlist();
 
   const [products, setProducts] = useState<ApiProduct[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
+  const [categoryIdMap, setCategoryIdMap] = useState<{ [key: string]: string }>({});
+  const [selectedPrices, setSelectedPrices] = useState<{
+    [productId: string]: number;
+  }>({});
 
   // Parse URL params
   const search = searchParams.get("search") || "";
@@ -94,17 +139,46 @@ function ProductsContent() {
     : [];
   const currentPage = Math.max(1, parseInt(searchParams.get("page") || "1"));
 
+  // Fetch categories on mount
+  useEffect(() => {
+    getCategories()
+      .then((data) => {
+        const categoryList = Array.isArray(data)
+          ? data.map((cat: any) => ({
+              id: cat.id || String(Math.random()),
+              name: cat.name || cat,
+            }))
+          : [];
+        
+        setCategories(categoryList);
+        
+        // Create name -> id mapping
+        const idMap: { [key: string]: string } = {};
+        categoryList.forEach((cat) => {
+          idMap[cat.name] = cat.id;
+        });
+        setCategoryIdMap(idMap);
+      })
+      .catch((err) => console.error("Failed to fetch categories:", err));
+  }, []);
+
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
       try {
         const { sortBy, order } = mapSortToApiParams(sort);
-        const category = selectedCategories.join(",");
+        
+        // Convert category names to IDs for API
+        const categoryIds = selectedCategories
+          .map((name) => categoryIdMap[name])
+          .filter(Boolean)
+          .join(",");
+        
         const raw = await getAllProducts(
           currentPage,
           ITEMS_PER_PAGE,
           search,
-          category,
+          categoryIds,
           sortBy,
           order,
           priceMin ?? undefined,
@@ -113,7 +187,8 @@ function ProductsContent() {
         const items: any[] = Array.isArray(raw)
           ? raw
           : raw?.products || raw?.items || [];
-        const pages: number = raw?.totalPages || raw?.pagination?.totalPages || 1;
+        const pages: number =
+          raw?.totalPages || raw?.pagination?.totalPages || 1;
         const total: number =
           raw?.totalItems ||
           raw?.pagination?.totalItems ||
@@ -132,6 +207,45 @@ function ProductsContent() {
 
     fetchProducts();
   }, [search, sort, currentPage, categoryParam, priceMin, priceMax]);
+
+  // Update product wishlist status
+  const updateProductWishlist = (productId: string, inWishlist: boolean) => {
+    setProducts((prev) =>
+      prev.map((p) =>
+        p.id === productId ? { ...p, inWishlist } : p
+      )
+    );
+  };
+
+  // Handle wishlist toggle
+  const handleWishlistToggle = async (product: ApiProduct) => {
+    if (!isAuthenticated()) {
+      toast.error("Please login to add to wishlist");
+      return;
+    }
+
+    try {
+      const isCurrentlyInWishlist = product.inWishlist || false;
+      
+      // Optimistic update
+      updateProductWishlist(product.id, !isCurrentlyInWishlist);
+      
+      // Call toggle endpoint
+      await toggleWishlist(product.id);
+      
+      // Show appropriate toast message
+      if (isCurrentlyInWishlist) {
+        toast.success(`${product.name} removed from Wishlist`);
+      } else {
+        toast.success(`${product.name} added to Wishlist ❤️`);
+      }
+    } catch (err) {
+      console.error("Wishlist error:", err);
+      toast.error("Failed to update wishlist");
+      // Revert optimistic update on error
+      updateProductWishlist(product.id, product.inWishlist || false);
+    }
+  };
 
   const handleSearchChange = useCallback(
     (value: string) => {
@@ -161,25 +275,36 @@ function ProductsContent() {
   );
 
   const handleAddToCart = (product: ApiProduct) => {
-    if (product.stock === "Out of Stock") {
+    const isOutOfStock =
+      product.stockStatus === "Out of Stock" ||
+      product.stock === "Out of Stock";
+    if (isOutOfStock) {
       toast.error("Product is out of stock");
       return;
     }
+
+    const selectedPriceIndex = selectedPrices[product.id] ?? 0;
+    const selectedOption = product.pricelist?.[selectedPriceIndex];
+    const cartPrice = selectedOption?.afterDiscountPrice ?? product.price;
+    const cartUnit = selectedOption?.unitName ?? "Unit";
+
     addItem(
       {
         id: product.id,
         name: product.name,
         slug: product.slug,
-        price: product.price,
+        price: cartPrice,
         image: product.image,
-        category: product.category,
-        stock: product.stock as "In Stock" | "Out of Stock",
+        category: product.category || "",
+        stock: (product.stockStatus || product.stock) as
+          | "In Stock"
+          | "Out of Stock",
         description: product.description,
         origin: product.origin,
       },
       1,
     );
-    toast.success(`${product.name} added to cart!`);
+    toast.success(`${product.name} (${cartUnit}) added to cart!`);
   };
 
   return (
@@ -189,7 +314,7 @@ function ProductsContent() {
       <div className="flex flex-col gap-8 lg:flex-row">
         {/* Desktop Sidebar Filters */}
         <aside className="hidden lg:block lg:w-64 lg:shrink-0">
-          <ProductFilters variant="sidebar" />
+          <ProductFilters variant="sidebar" categories={categories} categoryIdMap={categoryIdMap} />
         </aside>
 
         {/* Main Content */}
@@ -199,7 +324,7 @@ function ProductsContent() {
             <div className="flex items-center gap-3">
               {/* Mobile filter button (drawer) */}
               <div className="lg:hidden">
-                <ProductFilters variant="mobile" />
+                <ProductFilters variant="mobile" categories={categories} categoryIdMap={categoryIdMap} />
               </div>
               <div className="flex-1">
                 <SearchInput
@@ -216,7 +341,10 @@ function ProductsContent() {
           {loading ? (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
               {Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => (
-                <div key={i} className="h-64 animate-pulse rounded-xl bg-gray-200" />
+                <div
+                  key={i}
+                  className="h-64 animate-pulse rounded-xl bg-gray-200"
+                />
               ))}
             </div>
           ) : products.length === 0 ? (
@@ -247,32 +375,21 @@ function ProductsContent() {
                               🍑
                             </div>
                           )}
-                          {product.stock === "Out of Stock" && (
+                          {product.stockStatus === "Out of Stock" ||
+                          product.stock === "Out of Stock" ? (
                             <div className="absolute inset-0 flex items-center justify-center bg-black/40">
                               <span className="rounded bg-white px-3 py-1 text-sm font-medium text-error">
                                 Out of Stock
                               </span>
                             </div>
-                          )}
+                          ) : null}
                         </div>
                       </Link>
                       {/* Heart / wishlist button */}
                       <button
-                        onClick={() =>
-                          toggleWishlist({
-                            id: product.id,
-                            name: product.name,
-                            slug: product.slug,
-                            price: product.price,
-                            image: product.image,
-                            category: product.category,
-                            stock: product.stock as "In Stock" | "Out of Stock",
-                            description: product.description,
-                            origin: product.origin,
-                          })
-                        }
+                        onClick={() => handleWishlistToggle(product)}
                         aria-label={
-                          isInWishlist(product.id)
+                          product.inWishlist
                             ? "Remove from wishlist"
                             : "Add to wishlist"
                         }
@@ -281,7 +398,7 @@ function ProductsContent() {
                         <Heart
                           size={18}
                           className={
-                            isInWishlist(product.id)
+                            product.inWishlist
                               ? "fill-red-500 text-red-500"
                               : "text-gray-400"
                           }
@@ -300,18 +417,68 @@ function ProductsContent() {
                       <p className="mt-1 text-sm text-gray-500">
                         {product.origin}
                       </p>
-                      <div className="mt-3 flex items-center justify-between">
-                        <span className="text-lg font-bold text-navy">
-                          ₹{product.price}
-                        </span>
-                        <button
-                          onClick={() => handleAddToCart(product)}
-                          disabled={product.stock === "Out of Stock"}
-                          className="flex items-center gap-1 rounded bg-navy px-3 py-1.5 text-sm text-white transition-colors disabled:opacity-50 hover:bg-blue-900"
-                        >
-                          <ShoppingCart size={14} />
-                          Add
-                        </button>
+                      <div className="mt-3 flex flex-col gap-3">
+                        {product.pricelist && product.pricelist.length > 0 ? (
+                          <>
+                            <select
+                              value={selectedPrices[product.id] ?? 0}
+                              onChange={(e) =>
+                                setSelectedPrices({
+                                  ...selectedPrices,
+                                  [product.id]: parseInt(e.target.value),
+                                })
+                              }
+                              className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-navy focus:outline-none"
+                            >
+                              {product.pricelist.map((option, idx) => (
+                                <option key={option.unitId} value={idx}>
+                                  {option.unitName} - ₹
+                                  {option.afterDiscountPrice}
+                                  {option.discount &&
+                                    ` (${option.discount}% off)`}
+                                </option>
+                              ))}
+                            </select>
+                            <div className="flex items-center justify-between">
+                              <span className="text-lg font-bold text-navy">
+                                ₹
+                                {
+                                  product.pricelist[
+                                    selectedPrices[product.id] ?? 0
+                                  ]?.afterDiscountPrice
+                                }
+                              </span>
+                              <button
+                                onClick={() => handleAddToCart(product)}
+                                disabled={
+                                  product.stockStatus === "Out of Stock" ||
+                                  product.stock === "Out of Stock"
+                                }
+                                className="flex items-center gap-1 rounded bg-navy px-3 py-1.5 text-sm text-white transition-colors disabled:opacity-50 hover:bg-blue-900"
+                              >
+                                <ShoppingCart size={14} />
+                                Add
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex items-center justify-between">
+                            <span className="text-lg font-bold text-navy">
+                              ₹{product.price}
+                            </span>
+                            <button
+                              onClick={() => handleAddToCart(product)}
+                              disabled={
+                                product.stockStatus === "Out of Stock" ||
+                                product.stock === "Out of Stock"
+                              }
+                              className="flex items-center gap-1 rounded bg-navy px-3 py-1.5 text-sm text-white transition-colors disabled:opacity-50 hover:bg-blue-900"
+                            >
+                              <ShoppingCart size={14} />
+                              Add
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
