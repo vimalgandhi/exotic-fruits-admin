@@ -1,1 +1,0 @@
-<content of hooks files>

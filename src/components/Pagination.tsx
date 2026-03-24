@@ -20,7 +20,7 @@ export function Pagination({
       <button
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
-        className="flex items-center gap-1 rounded bg-navy px-3 py-2 text-white disabled:opacity-50 hover:bg-blue-900"
+        className="flex items-center gap-1 btn-primary"
       >
         <ChevronLeft size={16} />
         Prev
@@ -31,8 +31,8 @@ export function Pagination({
           onClick={() => onPageChange(page)}
           className={`rounded px-3 py-2 transition-colors ${
             currentPage === page
-              ? 'bg-gold text-white'
-              : 'bg-gray-200 text-navy hover:bg-gray-300'
+              ? 'bg-gold-500 text-white'
+              : 'bg-gray-200 text-navy-600 hover:bg-gray-300'
           }`}
         >
           {page}
@@ -41,7 +41,7 @@ export function Pagination({
       <button
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
-        className="flex items-center gap-1 rounded bg-navy px-3 py-2 text-white disabled:opacity-50 hover:bg-blue-900"
+        className="flex items-center gap-1 btn-primary"
       >
         Next
         <ChevronRight size={16} />

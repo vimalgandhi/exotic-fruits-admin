@@ -7,6 +7,7 @@ interface AuthState {
   user: User | null
   isAuthenticated: boolean
   loading: boolean
+  hydrated: boolean
   login: (email: string, password: string) => Promise<void>
   register: (
     name: string,
@@ -44,6 +45,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
       loading: false,
+      hydrated: false,
       login: async (email: string, password: string) => {
         set({ loading: true })
         try {
@@ -89,9 +91,24 @@ export const useAuthStore = create<AuthState>()(
         if (!cookie) {
           set({ user: null, isAuthenticated: false })
         }
-        // If cookie exists, trust the persisted state from zustand-persist
+        // Mark as hydrated after checking auth
+        set({ hydrated: true })
       },
     }),
-    { name: 'auth-store' }
+    { 
+      name: 'auth-store',
+      onRehydrateStorage: () => (state) => {
+        // After hydration from localStorage, verify with cookie
+        if (state) {
+          const cookie = getAuthCookie()
+          if (!cookie && state.isAuthenticated) {
+            // Cookie missing but store says authenticated - logout
+            state.user = null
+            state.isAuthenticated = false
+          }
+          state.hydrated = true
+        }
+      }
+    }
   )
 )

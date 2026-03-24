@@ -1,17 +1,18 @@
-import type { Metadata } from 'next'
-import './globals.css'
-import { Toaster } from 'sonner'
+import type { Metadata } from "next";
+import "./globals.css";
+import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
-  title: 'Exotic Fruits - Premium Fresh Fruits Delivered',
+  title: "Exotic Fruits - Premium Fresh Fruits Delivered",
   description:
-    'Shop the finest exotic fruits from around the world. Fresh, premium quality fruits delivered to your door.',
-}
+    "Shop the finest exotic fruits from around the world. Fresh, premium quality fruits delivered to your door.",
+  icons: "/favicon.ico",
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en">
@@ -20,5 +21,5 @@ export default function RootLayout({
         <Toaster position="top-right" richColors closeButton />
       </body>
     </html>
-  )
+  );
 }

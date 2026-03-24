@@ -17,10 +17,10 @@ export default function ErrorPage({
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4 text-center">
-      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-error/10">
-        <AlertTriangle size={40} className="text-error" />
+      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-error-500/10">
+        <AlertTriangle size={40} className="text-error-500" />
       </div>
-      <h1 className="mt-6 text-4xl font-bold text-navy">
+      <h1 className="mt-6 text-4xl font-bold text-navy-600">
         Something went wrong
       </h1>
       <p className="mx-auto mt-3 max-w-md text-gray-500">
@@ -35,7 +35,7 @@ export default function ErrorPage({
       <div className="mt-8 flex flex-col gap-3 sm:flex-row">
         <button
           onClick={reset}
-          className="rounded-lg bg-navy px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-900"
+          className="btn-primary"
         >
           Try Again
         </button>

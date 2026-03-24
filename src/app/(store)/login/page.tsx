@@ -30,7 +30,7 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
-        <h1 className="mb-2 text-2xl font-bold text-navy">Welcome back!</h1>
+        <h1 className="mb-2 text-2xl font-bold text-navy-600">Welcome back!</h1>
         <p className="mb-6 text-gray-500">Sign in to your account</p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -69,7 +69,7 @@ export default function LoginPage() {
         </form>
         <p className="mt-6 text-center text-sm text-gray-500">
           Don&#39;t have an account?{' '}
-          <Link href="/register" className="font-medium text-gold hover:underline">
+          <Link href="/register" className="font-medium text-gold-500 hover:underline">
             Register here
           </Link>
         </p>

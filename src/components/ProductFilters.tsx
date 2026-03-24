@@ -75,10 +75,10 @@ function FiltersPanel({
     <div className="space-y-6">
       {/* Price Range */}
       <div>
-        <h3 className="mb-3 font-semibold text-navy">Price Range (₹)</h3>
+        <h3 className="mb-3 font-semibold text-navy-600">Price Range (₹)</h3>
 
         {/* Current value display */}
-        <div className="mb-4 flex justify-between text-sm font-semibold text-navy">
+        <div className="mb-4 flex justify-between text-sm font-semibold text-navy-600">
           <span>₹{localMin}</span>
           <span>₹{localMax}</span>
         </div>
@@ -87,7 +87,7 @@ function FiltersPanel({
         <div className="relative h-2 rounded-full bg-gray-300">
           {/* Filled track between handles */}
           <div
-            className="absolute h-full rounded-full bg-gold"
+            className="absolute h-full rounded-full bg-gold-500"
             style={{
               left: `${minPercent}%`,
               right: `${100 - maxPercent}%`,
@@ -126,14 +126,14 @@ function FiltersPanel({
         </div> */}
 
         {/* Selected range summary */}
-        {/* <div className="mt-3 text-center text-sm font-semibold text-navy">
+        {/* <div className="mt-3 text-center text-sm font-semibold text-navy-600">
           Selected: ₹{localMin} – ₹{localMax}
         </div> */}
       </div>
 
       {/* Category Checkboxes */}
       <div>
-        <h3 className="mb-3 font-semibold text-navy">Category</h3>
+        <h3 className="mb-3 font-semibold text-navy-600">Category</h3>
         <ul className="space-y-2">
           {categoryOptions.length > 0 ? (
             categoryOptions.map((cat) => {
@@ -146,12 +146,12 @@ function FiltersPanel({
                       type="checkbox"
                       checked={checked}
                       onChange={(e) => handleCategoryChange(catName, e.target.checked)}
-                      className="h-4 w-4 rounded border-gray-300 accent-navy"
+                      className="h-4 w-4 rounded border-gray-300 accent-navy-600"
                       aria-label={`Filter by ${catName}`}
                     />
                     <span
                       className={
-                        checked ? 'font-medium text-navy' : 'text-gray-700'
+                        checked ? 'font-medium text-navy-600' : 'text-gray-700'
                       }
                     >
                       {catName}
@@ -170,7 +170,7 @@ function FiltersPanel({
       {hasActiveFilters && (
         <button
           onClick={handleClear}
-          className="w-full rounded border border-navy px-3 py-2 text-sm font-medium text-navy transition-colors hover:bg-navy hover:text-white"
+          className="w-full rounded border border-navy-600 px-3 py-2 text-sm font-medium text-navy-600 transition-colors hover:bg-navy-600 hover:text-white"
         >
           Clear Filters
         </button>
@@ -207,12 +207,12 @@ export function ProductFilters({ variant = 'sidebar', categories: categoriesFrom
         <button
           onClick={() => setDrawerOpen(true)}
           aria-label="Open filters"
-          className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-navy"
+          className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-navy-600"
         >
           <SlidersHorizontal size={16} />
           Filters
           {activeCount > 0 && (
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-navy text-xs text-white">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-navy-600 text-xs text-white">
               {activeCount}
             </span>
           )}
@@ -233,7 +233,7 @@ export function ProductFilters({ variant = 'sidebar', categories: categoriesFrom
             {/* Drawer with slide-in/slide-out animation */}
             <div className={`relative w-80 max-w-full overflow-y-auto bg-white p-6 shadow-xl transition-transform duration-300 ${isClosing ? 'drawer-slide-out' : 'drawer-slide-in'}`}>
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="font-semibold text-navy">Filters</h2>
+                <h2 className="font-semibold text-navy-600">Filters</h2>
                 <button
                   onClick={handleClose}
                   className="rounded p-1 hover:bg-gray-100 transition-colors"
@@ -245,7 +245,7 @@ export function ProductFilters({ variant = 'sidebar', categories: categoriesFrom
               <FiltersPanel onClose={handleClose} categories={categoriesFromProps} categoryIdMap={categoryIdMap} />
               {/* <button
                 onClick={handleClose}
-                className="mt-6 w-full rounded bg-navy px-4 py-2 text-white hover:bg-blue-900 transition-colors"
+                className="mt-6 w-full btn-primary"
               >
                 Done
               </button> */}

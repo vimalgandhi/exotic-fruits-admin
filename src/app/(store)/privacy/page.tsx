@@ -1,12 +1,12 @@
 export default function PrivacyPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
-      <h1 className="mb-2 text-3xl font-bold text-navy">Privacy Policy</h1>
+      <h1 className="mb-2 text-3xl font-bold text-navy-600">Privacy Policy</h1>
       <p className="mb-8 text-sm text-gray-500">Last updated: 1 January 2025</p>
 
       <div className="space-y-8 text-gray-700">
         <section>
-          <h2 className="mb-3 text-xl font-semibold text-navy">
+          <h2 className="mb-3 text-xl font-semibold text-navy-600">
             1. Introduction
           </h2>
           <p>
@@ -19,7 +19,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-semibold text-navy">
+          <h2 className="mb-3 text-xl font-semibold text-navy-600">
             2. Information We Collect
           </h2>
           <ul className="list-disc space-y-2 pl-5">
@@ -43,7 +43,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-semibold text-navy">
+          <h2 className="mb-3 text-xl font-semibold text-navy-600">
             3. How We Use Your Information
           </h2>
           <ul className="list-disc space-y-2 pl-5">
@@ -61,7 +61,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-semibold text-navy">
+          <h2 className="mb-3 text-xl font-semibold text-navy-600">
             4. Data Sharing
           </h2>
           <p>
@@ -73,7 +73,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-semibold text-navy">5. Cookies</h2>
+          <h2 className="mb-3 text-xl font-semibold text-navy-600">5. Cookies</h2>
           <p>
             We use cookies to maintain your session, remember cart contents, and
             analyse site traffic. You can control cookie settings through your
@@ -82,7 +82,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-semibold text-navy">
+          <h2 className="mb-3 text-xl font-semibold text-navy-600">
             6. Data Security
           </h2>
           <p>
@@ -94,7 +94,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-semibold text-navy">
+          <h2 className="mb-3 text-xl font-semibold text-navy-600">
             7. Data Retention
           </h2>
           <p>
@@ -106,7 +106,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-semibold text-navy">
+          <h2 className="mb-3 text-xl font-semibold text-navy-600">
             8. Your Rights
           </h2>
           <ul className="list-disc space-y-2 pl-5">
@@ -119,7 +119,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-semibold text-navy">
+          <h2 className="mb-3 text-xl font-semibold text-navy-600">
             9. Children&apos;s Privacy
           </h2>
           <p>
@@ -131,7 +131,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-semibold text-navy">
+          <h2 className="mb-3 text-xl font-semibold text-navy-600">
             10. Contact Us
           </h2>
           <p>
@@ -139,7 +139,7 @@ export default function PrivacyPage() {
             contact our Data Protection Officer at{' '}
             <a
               href="mailto:privacy@exoticfruits.in"
-              className="text-navy underline hover:text-gold"
+              className="text-navy-600 underline hover:text-gold-500"
             >
               privacy@exoticfruits.in
             </a>

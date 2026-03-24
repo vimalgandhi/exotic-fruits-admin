@@ -10,15 +10,16 @@ import { ProductFilters } from "@/components/ProductFilters";
 import { ProductSort } from "@/components/ProductSort";
 import { ProductPagination } from "@/components/ProductPagination";
 import { ShoppingCart, Heart } from "lucide-react";
-import { useCartStore } from "@/store/cartStore";
+import { useCart } from "@/hooks/useCart";
+import { useAuth } from "@/hooks/useAuth";
+import { useWishlistStore } from "@/store/wishlistStore";
 import { toast } from "sonner";
 import {
   getAllProducts,
   toggleWishlist,
-  isAuthenticated,
   getCategories,
 } from "@/lib/api";
-import type { SortOptionValue } from "@/types";
+import type { SortOptionValue, Product } from "@/types";
 
 const ITEMS_PER_PAGE = 6;
 
@@ -110,7 +111,8 @@ function mapSortToApiParams(sort: SortOptionValue): {
 function ProductsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const addItem = useCartStore((s) => s.addItem);
+  const { addItem } = useCart();
+  const { isAuthenticated } = useAuth();
 
   const [products, setProducts] = useState<ApiProduct[]>([]);
   const [totalPages, setTotalPages] = useState(1);
@@ -121,6 +123,7 @@ function ProductsContent() {
   const [selectedPrices, setSelectedPrices] = useState<{
     [productId: string]: number;
   }>({});
+  const [addingProductId, setAddingProductId] = useState<string | null>(null);;
 
   // Parse URL params
   const search = searchParams.get("search") || "";
@@ -219,7 +222,7 @@ function ProductsContent() {
 
   // Handle wishlist toggle
   const handleWishlistToggle = async (product: ApiProduct) => {
-    if (!isAuthenticated()) {
+    if (!isAuthenticated) {
       toast.error("Please login to add to wishlist");
       return;
     }
@@ -227,8 +230,30 @@ function ProductsContent() {
     try {
       const isCurrentlyInWishlist = product.inWishlist || false;
       
-      // Optimistic update
+      // Optimistic update local state
       updateProductWishlist(product.id, !isCurrentlyInWishlist);
+      
+      // Update Zustand store optimistically
+      if (isCurrentlyInWishlist) {
+        useWishlistStore.setState((state) => ({
+          items: state.items.filter((item) => item.id !== product.id),
+        }));
+      } else {
+        const productToAdd: Product = {
+          id: product.id,
+          name: product.name,
+          slug: product.slug,
+          price: product.pricelist?.[selectedPrices[product.id] ?? 0]?.afterDiscountPrice ?? product.price ?? 0,
+          image: product.image,
+          category: product.category || '',
+          stock: product.stockStatus === 'Out of Stock' ? 'Out of Stock' : 'In Stock',
+          description: product.description || '',
+          origin: product.origin || '',
+        }
+        useWishlistStore.setState((state) => ({
+          items: [...state.items, productToAdd],
+        }));
+      }
       
       // Call toggle endpoint
       await toggleWishlist(product.id);
@@ -274,7 +299,12 @@ function ProductsContent() {
     [searchParams, router],
   );
 
-  const handleAddToCart = (product: ApiProduct) => {
+  const handleAddToCart = async (product: ApiProduct) => {
+    if (!isAuthenticated) {
+      toast.error("Please login to add items to cart");
+      return;
+    }
+
     const isOutOfStock =
       product.stockStatus === "Out of Stock" ||
       product.stock === "Out of Stock";
@@ -283,35 +313,41 @@ function ProductsContent() {
       return;
     }
 
-    const selectedPriceIndex = selectedPrices[product.id] ?? 0;
-    const selectedOption = product.pricelist?.[selectedPriceIndex];
-    const cartPrice = selectedOption?.afterDiscountPrice ?? product.price;
-    const cartUnit = selectedOption?.unitName ?? "Unit";
+    try {
+      setAddingProductId(product.id);
+      const selectedPriceIndex = selectedPrices[product.id] ?? 0;
+      const selectedOption = product.pricelist?.[selectedPriceIndex];
 
-    addItem(
-      {
-        id: product.id,
-        name: product.name,
-        slug: product.slug,
-        price: cartPrice,
-        image: product.image,
-        category: product.category || "",
-        stock: (product.stockStatus || product.stock) as
-          | "In Stock"
-          | "Out of Stock",
-        description: product.description,
-        origin: product.origin,
-      },
-      1,
-    );
-    toast.success(`${product.name} (${cartUnit}) added to cart!`);
+      await addItem(
+        {
+          id: product.id,
+          name: product.name,
+          slug: product.slug,
+          price: product.price,
+          image: product.image,
+          category: product.category || "",
+          stock: (product.stockStatus || product.stock) as
+            | "In Stock"
+            | "Out of Stock",
+          description: product.description,
+          origin: product.origin,
+        },
+        1,
+        selectedOption as any,
+      );
+      // addItem already shows success toast
+    } catch (error) {
+      console.error("Add to cart error:", error);
+    } finally {
+      setAddingProductId(null);
+    }
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-2 md:py-8">
-      <h1 className="mb-6 text-3xl font-bold text-navy">Our Products</h1>
+    <div className="mx-auto max-w-7xl px-3 sm:px-4 py-4 md:py-8">
+      <h1 className="mb-4 sm:mb-6 text-2xl sm:text-3xl font-bold text-navy-600">Our Products</h1>
 
-      <div className="flex flex-col gap-8 lg:flex-row">
+      <div className="flex flex-col gap-6 lg:gap-8 lg:flex-row">
         {/* Desktop Sidebar Filters */}
         <aside className="hidden lg:block lg:w-64 lg:shrink-0">
           <ProductFilters variant="sidebar" categories={categories} categoryIdMap={categoryIdMap} />
@@ -320,30 +356,34 @@ function ProductsContent() {
         {/* Main Content */}
         <div className="min-w-0 flex-1">
           {/* Top bar: mobile filters + search + sort */}
-          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
+          <div className="mb-4 sm:mb-6 flex flex-col gap-2 sm:gap-3">
+            {/* First row: Filters + Search */}
+            <div className="flex items-center gap-2">
               {/* Mobile filter button (drawer) */}
-              <div className="lg:hidden">
+              <div className="lg:hidden flex-shrink-0">
                 <ProductFilters variant="mobile" categories={categories} categoryIdMap={categoryIdMap} />
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <SearchInput
-                  placeholder="Search products..."
+                  placeholder="Search..."
                   value={search}
                   onChange={handleSearchChange}
                 />
               </div>
             </div>
-            <ProductSort />
+            {/* Second row: Sort (full width on mobile, flex on sm+) */}
+            <div className="sm:flex sm:justify-end">
+              <ProductSort />
+            </div>
           </div>
 
           {/* Loading skeleton */}
           {loading ? (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 sm:grid-cols-3 lg:grid-cols-4">
               {Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => (
                 <div
                   key={i}
-                  className="h-64 animate-pulse rounded-xl bg-gray-200"
+                  className="aspect-square animate-pulse rounded-lg bg-gray-200"
                 />
               ))}
             </div>
@@ -354,31 +394,31 @@ function ProductsContent() {
             />
           ) : (
             <>
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 sm:grid-cols-3 lg:grid-cols-4">
                 {products.map((product) => (
                   <div
                     key={product.id}
-                    className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
+                    className="group flex flex-col overflow-hidden rounded-lg border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:shadow-lg hover:border-gold-300"
                   >
-                    <div className="relative">
+                    <div className="relative overflow-hidden bg-gray-50">
                       <Link href={`/products/${product.slug}`}>
-                        <div className="relative h-48 overflow-hidden">
+                        <div className="relative aspect-square overflow-hidden">
                           {product.image ? (
                             <Image
                               src={product.image}
                               alt={product.name}
                               fill
-                              className="object-cover transition-transform duration-300 hover:scale-105"
+                              className="object-cover transition-transform duration-300 group-hover:scale-110"
                             />
                           ) : (
-                            <div className="flex h-full items-center justify-center bg-gray-100 text-4xl">
+                            <div className="flex h-full items-center justify-center bg-gradient-to-br from-orange-100 to-orange-50 text-2xl sm:text-3xl md:text-4xl">
                               🍑
                             </div>
                           )}
                           {product.stockStatus === "Out of Stock" ||
                           product.stock === "Out of Stock" ? (
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                              <span className="rounded bg-white px-3 py-1 text-sm font-medium text-error">
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+                              <span className="rounded bg-white px-2 py-1 text-xs font-medium text-red-600">
                                 Out of Stock
                               </span>
                             </div>
@@ -393,31 +433,40 @@ function ProductsContent() {
                             ? "Remove from wishlist"
                             : "Add to wishlist"
                         }
-                        className="absolute right-2 top-2 rounded-full bg-white p-1.5 shadow transition-transform duration-300 hover:scale-110 active:scale-125"
+                        className="absolute right-1.5 top-1.5 sm:right-2 sm:top-2 rounded-full bg-white p-1.5 shadow-lg transition-all duration-300 hover:scale-110 active:scale-95 hover:shadow-xl"
                       >
                         <Heart
-                          size={18}
-                          className={
+                          size={14}
+                          className={`sm:size-4 ${
                             product.inWishlist
                               ? "fill-red-500 text-red-500"
                               : "text-gray-400"
-                          }
+                          }`}
                         />
                       </button>
                     </div>
-                    <div className="p-4">
-                      <span className="text-xs font-medium text-gold">
+
+                    {/* Product Info */}
+                    <div className="flex flex-1 flex-col p-2 sm:p-3">
+                      {/* Category Badge */}
+                      <span className="text-xs font-semibold text-gold-500 bg-gold-50 rounded-full px-2 py-0.5 w-fit">
                         {product.category}
                       </span>
+
+                      {/* Product Name */}
                       <Link href={`/products/${product.slug}`}>
-                        <h3 className="mt-1 font-semibold text-navy hover:text-gold">
+                        <h3 className="mt-1.5 sm:mt-2 font-semibold text-navy-600 text-xs sm:text-sm line-clamp-2 group-hover:text-gold-500 transition-colors">
                           {product.name}
                         </h3>
                       </Link>
-                      <p className="mt-1 text-sm text-gray-500">
+
+                      {/* Origin */}
+                      <p className="mt-0.5 sm:mt-1 text-xs text-gray-500 line-clamp-1">
                         {product.origin}
                       </p>
-                      <div className="mt-3 flex flex-col gap-3">
+
+                      {/* Price and Actions */}
+                      <div className="mt-auto flex flex-col gap-1.5 pt-2 sm:gap-2 sm:pt-3">
                         {product.pricelist && product.pricelist.length > 0 ? (
                           <>
                             <select
@@ -428,19 +477,19 @@ function ProductsContent() {
                                   [product.id]: parseInt(e.target.value),
                                 })
                               }
-                              className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-navy focus:outline-none"
+                              className="w-full rounded border border-gray-200 px-2 py-1 text-xs font-medium focus:border-navy focus:outline-none transition-colors"
                             >
                               {product.pricelist.map((option, idx) => (
                                 <option key={option.unitId} value={idx}>
                                   {option.unitName} - ₹
                                   {option.afterDiscountPrice}
                                   {option.discount &&
-                                    ` (${option.discount}% off)`}
+                                    ` (-${option.discount}%)`}
                                 </option>
                               ))}
                             </select>
                             <div className="flex items-center justify-between">
-                              <span className="text-lg font-bold text-navy">
+                              <span className="font-bold text-navy-600 text-xs sm:text-sm">
                                 ₹
                                 {
                                   product.pricelist[
@@ -448,37 +497,34 @@ function ProductsContent() {
                                   ]?.afterDiscountPrice
                                 }
                               </span>
-                              <button
-                                onClick={() => handleAddToCart(product)}
-                                disabled={
-                                  product.stockStatus === "Out of Stock" ||
-                                  product.stock === "Out of Stock"
-                                }
-                                className="flex items-center gap-1 rounded bg-navy px-3 py-1.5 text-sm text-white transition-colors disabled:opacity-50 hover:bg-blue-900"
-                              >
-                                <ShoppingCart size={14} />
-                                Add
-                              </button>
                             </div>
                           </>
                         ) : (
                           <div className="flex items-center justify-between">
-                            <span className="text-lg font-bold text-navy">
+                            <span className="font-bold text-navy-600 text-xs sm:text-sm">
                               ₹{product.price}
                             </span>
-                            <button
-                              onClick={() => handleAddToCart(product)}
-                              disabled={
-                                product.stockStatus === "Out of Stock" ||
-                                product.stock === "Out of Stock"
-                              }
-                              className="flex items-center gap-1 rounded bg-navy px-3 py-1.5 text-sm text-white transition-colors disabled:opacity-50 hover:bg-blue-900"
-                            >
-                              <ShoppingCart size={14} />
-                              Add
-                            </button>
                           </div>
                         )}
+
+                        {/* Add to Cart Button */}
+                        <button
+                          onClick={() => handleAddToCart(product)}
+                          disabled={
+                            addingProductId === product.id ||
+                            product.stockStatus === "Out of Stock" ||
+                            product.stock === "Out of Stock"
+                          }
+                          className="w-full flex items-center justify-center gap-1 rounded-lg bg-gradient-to-r from-navy to-blue-600 px-2 py-1.5 text-xs font-medium text-white transition-all hover:shadow-lg hover:from-blue-700 hover:to-blue-800 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed sm:py-2"
+                        >
+                          <ShoppingCart size={12} />
+                          <span className="hidden xs:inline">
+                            {addingProductId === product.id ? "Adding..." : "Add"}
+                          </span>
+                          <span className="xs:hidden">
+                            {addingProductId === product.id ? "..." : "+"}
+                          </span>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -509,9 +555,9 @@ export default function ProductsPage() {
         <div className="mx-auto max-w-7xl px-4 py-8">
           <div className="animate-pulse space-y-4">
             <div className="h-8 w-48 rounded bg-gray-200" />
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="h-64 rounded-xl bg-gray-200" />
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {Array.from({ length: 10 }).map((_, i) => (
+                <div key={i} className="aspect-square rounded-lg bg-gray-200" />
               ))}
             </div>
           </div>

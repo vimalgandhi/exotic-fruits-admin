@@ -84,11 +84,11 @@ export default function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
-      <h1 className="mb-8 text-3xl font-bold text-navy">Settings</h1>
+      <h1 className="mb-8 text-3xl font-bold text-navy-600">Settings</h1>
 
       {/* Profile Settings */}
       <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-lg font-bold text-navy">Profile Settings</h2>
+        <h2 className="mb-4 text-lg font-bold text-navy-600">Profile Settings</h2>
         <form onSubmit={handleProfileSubmit(onProfileSubmit)} className="space-y-4">
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">
@@ -144,7 +144,7 @@ export default function SettingsPage() {
 
       {/* Change Password */}
       <section className="mt-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-lg font-bold text-navy">Change Password</h2>
+        <h2 className="mb-4 text-lg font-bold text-navy-600">Change Password</h2>
         <form
           onSubmit={handlePasswordSubmit(onPasswordSubmit)}
           className="space-y-4"
@@ -209,7 +209,7 @@ export default function SettingsPage() {
 
       {/* Notification Preferences */}
       <section className="mt-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-lg font-bold text-navy">
+        <h2 className="mb-4 text-lg font-bold text-navy-600">
           Notification Preferences
         </h2>
         <div className="space-y-3">
@@ -225,7 +225,7 @@ export default function SettingsPage() {
               <input
                 type="checkbox"
                 defaultChecked={pref.id === 'order-updates'}
-                className="h-4 w-4 rounded accent-navy"
+                className="h-4 w-4 rounded accent-navy-600"
               />
               <span className="text-sm text-gray-700">{pref.label}</span>
             </label>

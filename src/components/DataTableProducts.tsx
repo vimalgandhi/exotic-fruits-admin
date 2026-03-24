@@ -13,16 +13,16 @@ export function DataTableProducts({ products }: DataTableProductsProps) {
       <table className="w-full border-collapse">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-4 py-3 text-left text-sm font-semibold text-navy">
+            <th className="px-4 py-3 text-left text-sm font-semibold text-navy-600">
               Name
             </th>
-            <th className="px-4 py-3 text-left text-sm font-semibold text-navy">
+            <th className="px-4 py-3 text-left text-sm font-semibold text-navy-600">
               Price
             </th>
-            <th className="px-4 py-3 text-left text-sm font-semibold text-navy">
+            <th className="px-4 py-3 text-left text-sm font-semibold text-navy-600">
               Category
             </th>
-            <th className="px-4 py-3 text-left text-sm font-semibold text-navy">
+            <th className="px-4 py-3 text-left text-sm font-semibold text-navy-600">
               Stock
             </th>
           </tr>
@@ -41,7 +41,7 @@ export function DataTableProducts({ products }: DataTableProductsProps) {
               <td className="px-4 py-3">
                 <span
                   className={`rounded-full px-2 py-1 text-xs font-medium text-white ${
-                    product.stock === 'In Stock' ? 'bg-success' : 'bg-error'
+                    product.stock === 'In Stock' ? 'bg-success-500' : 'bg-error-500'
                   }`}
                 >
                   {product.stock}

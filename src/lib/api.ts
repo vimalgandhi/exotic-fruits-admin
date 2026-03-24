@@ -176,22 +176,40 @@ export async function getCart() {
   return data.data;
 }
 
-export async function addToCart(productId: string, quantity: number) {
+export async function addToCart(
+  productId: string,
+  quantity: number,
+  selectedUnit?: Record<string, unknown>,
+) {
   const response = await fetch(`${API_URL}/cart/add`, {
     method: "POST",
     headers: getAuthHeaders(),
-    body: JSON.stringify({ productId, quantity }),
+    body: JSON.stringify({ 
+      product_id: productId, 
+      quantity,
+      selected_unit: selectedUnit,
+    }),
   });
-  if (!response.ok) throw new Error("Failed to add to cart");
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error?.message || "Failed to add to cart");
+  }
   const data = await response.json();
   return data.data;
 }
 
-export async function updateCartItem(itemId: string, quantity: number) {
+export async function updateCartItem(
+  itemId: string,
+  quantity: number,
+  selectedUnit?: Record<string, unknown>,
+) {
   const response = await fetch(`${API_URL}/cart/${itemId}`, {
     method: "PUT",
     headers: getAuthHeaders(),
-    body: JSON.stringify({ quantity }),
+    body: JSON.stringify({ 
+      quantity,
+      selected_unit: selectedUnit,
+    }),
   });
   if (!response.ok) throw new Error("Failed to update cart item");
   const data = await response.json();

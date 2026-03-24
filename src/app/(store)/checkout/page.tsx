@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -9,9 +9,42 @@ import { useAuth } from '@/hooks/useAuth'
 import { useCartStore } from '@/store/cartStore'
 import { useCheckoutStore } from '@/store/checkoutStore'
 import { formatCurrency } from '@/lib/utils'
-import { createOrder } from '@/lib/api'
 import { toast } from 'sonner'
 import { Lock } from 'lucide-react'
+
+// Declare Razorpay on window
+declare global {
+  interface Window {
+    Razorpay: new (options: Record<string, unknown>) => {
+      open(): void
+    }
+  }
+}
+
+// Promise-based script loader - ensures script is fully loaded before use
+function loadRazorpayScript(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (window.Razorpay) {
+      console.log('✅ Razorpay already loaded in window')
+      resolve(true)
+      return
+    }
+
+    console.log('🔵 Loading Razorpay script...')
+    const script = document.createElement('script')
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js'
+    script.async = true
+    script.onload = () => {
+      console.log('✅ Razorpay script loaded successfully')
+      resolve(true)
+    }
+    script.onerror = () => {
+      console.error('❌ Failed to load Razorpay script')
+      resolve(false)
+    }
+    document.body.appendChild(script)
+  })
+}
 
 const checkoutSchema = z.object({
   firstName: z.string().min(2, 'First name is required'),
@@ -35,6 +68,21 @@ export default function CheckoutPage() {
   const { items, getTotal, clearCart } = useCartStore()
   const { setOrderData, setOrderId, setPaymentStatus } = useCheckoutStore()
   const total = getTotal()
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [isRazorpayReady, setIsRazorpayReady] = useState(false)
+
+  // Load Razorpay script on component mount
+  useEffect(() => {
+    const initRazorpay = async () => {
+      const loaded = await loadRazorpayScript()
+      setIsRazorpayReady(loaded)
+      if (!loaded) {
+        console.warn('⚠️ Razorpay script failed to load - card payment will not work')
+      }
+    }
+    
+    initRazorpay()
+  }, [])
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -53,6 +101,7 @@ export default function CheckoutPage() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
+    getValues,
   } = useForm<CheckoutForm>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
@@ -62,40 +111,341 @@ export default function CheckoutPage() {
     },
   })
 
-  const onSubmit = async (data: CheckoutForm) => {
+  // Handle Razorpay Payment
+  const handleRazorpayPayment = async (data: CheckoutForm) => {
     try {
-      setOrderData(data)
+      // Ensure Razorpay script is loaded
+      console.log('🔵 Checking Razorpay availability...')
+      if (!window.Razorpay) {
+        console.log('⚠️ Razorpay not loaded in window, attempting to load...')
+        const loaded = await loadRazorpayScript()
+        if (!loaded) {
+          throw new Error('Failed to load Razorpay. Please check your internet connection and try again.')
+        }
+      }
+
+      if (!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID) {
+        console.error('❌ Razorpay key not configured in environment')
+        throw new Error('Payment gateway key is not configured. Please contact support.')
+      }
+
+      console.log('✅ Razorpay is ready')
+      console.log('📍 [RAZORPAY] Payment Initiated:');
+      
       const deliveryAddress = `${data.firstName} ${data.lastName}, ${data.address}, ${data.city}, ${data.state} - ${data.pincode}`
       const orderItems = items.map((item) => ({
         productId: item.product.id,
         quantity: item.quantity,
-        // Send the ACTUAL price used (discounted if unit selected, otherwise base)
-        price: item.selectedUnit 
-          ? item.selectedUnit.afterDiscountPrice 
+        price: item.selectedUnit
+          ? item.selectedUnit.afterDiscountPrice
           : item.product.price,
-        selectedUnit: item.selectedUnit, // Include selected unit info for validation
+        selectedUnit: item.selectedUnit,
       }))
 
-      let orderId: string
-      try {
-        const order = await createOrder(
-          orderItems as Record<string, unknown>[],
-          deliveryAddress,
-          total,
-        )
-        orderId = order?.id || order?._id || `ORD-${Date.now()}`
-      } catch {
-        // Fallback to local order ID if API unavailable
-        orderId = `ORD-${Date.now()}`
+      console.log('📦 Cart Items Count:', items.length);
+      console.log('💰 Total Amount:', total);
+
+      // Razorpay expects amount in PAISE (not rupees)
+      const amountInPaise = Math.round(total * 100)
+      console.log('💱 Amount in paise:', amountInPaise);
+
+      // Generate a temporary reference ID for this payment attempt
+      const paymentReference = `PAY-${Date.now()}`
+      
+      // Normalize phone for Razorpay (only digits)
+      const normalizedPhone = data.phone.replace(/\D/g, '')
+      
+      // Create Razorpay order (payment gateway order, not business order)
+      console.log('🔵 Creating Razorpay order...')
+      console.log('📱 Normalized phone:', normalizedPhone, 'from:', data.phone)
+      const res = await fetch('/api/razorpay/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: amountInPaise,
+          orderId: paymentReference,
+          email: data.email,
+          phone: normalizedPhone,
+          name: `${data.firstName} ${data.lastName}`,
+        }),
+      })
+
+      const responseData = await res.json()
+      console.log('📞 Razorpay API Response Status:', res.status)
+      console.log('📞 Razorpay API Response Data:', JSON.stringify(responseData, null, 2))
+
+      if (!res.ok) {
+        console.error('❌ Razorpay API Error:', responseData)
+        const errorMsg = responseData.error || responseData.message || JSON.stringify(responseData)
+        throw new Error(`Failed to initiate payment: ${errorMsg}`)
       }
 
-      setOrderId(orderId)
-      setPaymentStatus('PAID')
-      clearCart()
-      toast.success('Order placed successfully!')
-      router.push(`/order-success?orderId=${orderId}`)
-    } catch {
-      toast.error('Failed to place order. Please try again.')
+      console.log('✅ Razorpay order created successfully')
+      
+      const razorpayOrderId = responseData.orderId || responseData.order_id || responseData.id
+      if (!razorpayOrderId) {
+        console.error('❌ No order ID in response:', responseData)
+        throw new Error('Payment gateway returned invalid response. No order ID found.')
+      }
+      
+      console.log('✅ Razorpay Order ID:', razorpayOrderId)
+      console.log('✅ Using Key ID:', responseData.keyId?.substring(0, 15) + '...')
+
+      // Use key from response or fallback to env
+      const razorpayKey = responseData.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID
+      if (!razorpayKey) {
+        throw new Error('Razorpay key not available')
+      }
+
+      // Open Razorpay checkout
+      // Use amount and currency from Razorpay API response (not recalculated)
+      const options = {
+        key: razorpayKey,
+        amount: responseData.amount, // From Razorpay API response
+        currency: responseData.currency || 'INR', // From Razorpay API response
+        order_id: razorpayOrderId,
+        name: 'Exotic Fruits',
+        description: `Payment for order at Exotic Fruits`,
+        prefill: {
+          name: `${data.firstName} ${data.lastName}`,
+          email: data.email,
+          contact: normalizedPhone,
+        },
+        theme: {
+          color: '#1A2B4B',
+        },
+        handler: async (response: {
+          razorpay_payment_id: string
+          razorpay_order_id: string
+          razorpay_signature: string
+        }) => {
+          setIsProcessing(true)
+          try {
+            console.log('✅ Payment completed by Razorpay');
+            console.log('📦 Payment Response:', {
+              paymentId: response.razorpay_payment_id?.substring(0, 10) + '...',
+              orderId: response.razorpay_order_id,
+              signatureFirst10: response.razorpay_signature?.substring(0, 10) + '...',
+            });
+            console.log('🔐 Verifying payment signature...');
+
+            const orderItems = items.map((item) => ({
+              productId: item.product.id,
+              quantity: item.quantity,
+              price: item.selectedUnit
+                ? item.selectedUnit.afterDiscountPrice
+                : item.product.price,
+              selectedUnit: item.selectedUnit,
+            }))
+
+            console.log('📦 Preparing to verify payment with:')
+            console.log('  - Payment ID:', response.razorpay_payment_id?.substring(0, 15) + '...')
+            console.log('  - Order ID:', response.razorpay_order_id)
+            console.log('  - Items count:', orderItems.length)
+            console.log('  - Total:', total)
+            console.log('  - Customer email:', data.email)
+
+            // Verify payment AND create order in backend
+            const verifyRes = await fetch('/api/razorpay/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                userId: user?.id,
+                customerDetails: {
+                  firstName: data.firstName,
+                  lastName: data.lastName,
+                  email: data.email,
+                  phone: data.phone,
+                  deliveryAddress,
+                },
+                orderItems,
+                total,
+              }),
+            })
+
+            console.log('📡 Verify API response status:', verifyRes.status)
+            const verifyData = await verifyRes.json()
+            console.log('✅ Verification response received')
+            console.log('📍 Verification response:', {
+              verified: verifyData.verified,
+              orderId: verifyData.orderId,
+              message: verifyData.message,
+              orderCreationStatus: verifyData.orderCreationStatus,
+            })
+
+            if (!verifyRes.ok) {
+              console.error('❌ Verification API error:', verifyData)
+              throw new Error(verifyData.message || verifyData.error || 'Payment verification failed')
+            }
+
+            if (!verifyData.verified) {
+              console.error('❌ Payment signature invalid:', verifyData)
+              throw new Error('Payment signature verification failed')
+            }
+            console.log('✅ Payment verified successfully')
+            const orderId = verifyData.orderId
+            console.log('💾 Saving order to checkout store...')
+            console.log('  - Order ID:', orderId)
+            console.log('  - Payment Status:', 'PAID')
+
+            setOrderData(data)
+            setOrderId(orderId)
+            setPaymentStatus('PAID')
+            
+            console.log('🗑️  Clearing cart...')
+            clearCart()
+            console.log('✅ Cart cleared successfully')
+            
+            toast.success('Payment successful! Order placed!')
+            
+            console.log('🔀 Redirecting to order-success page...')
+            router.push(`/order-success?orderId=${orderId}`)
+          } catch (error) {
+            console.error('❌ Verification error:', error)
+            console.error('❌ Full error object:', error)
+            if (error instanceof Error) {
+              console.error('❌ Error message:', error.message)
+              console.error('❌ Error stack:', error.stack)
+            }
+            toast.error(
+              error instanceof Error
+                ? error.message
+                : 'Payment verification failed. Please contact support.',
+            )
+            setIsProcessing(false)
+          }
+        },
+      }
+
+      console.log('🔵 Instantiating Razorpay with options...')
+      console.log('Options:', JSON.stringify({
+        key: razorpayKey,
+        amount: responseData.amount,
+        currency: responseData.currency,
+        order_id: razorpayOrderId,
+        name: 'Exotic Fruits',
+      }, null, 2))
+
+      const rzp = new window.Razorpay(options)
+      console.log('✅ Razorpay instance created, opening checkout...')
+      rzp.open()
+      
+    } catch (error) {
+      console.error('❌ Razorpay Error:', error)
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Payment initialization failed'
+      
+      console.error('Full error object:', error)
+      console.error('Error type:', typeof error)
+      console.error('Error stack:', error instanceof Error ? error.stack : 'N/A')
+      
+      toast.error(errorMessage)
+      setIsProcessing(false)
+    }
+  }
+
+  const onSubmit = async (data: CheckoutForm) => {
+    try {
+      setIsProcessing(true)
+
+      // If card payment, use Razorpay
+      if (data.paymentMethod === 'card') {
+        await handleRazorpayPayment(data)
+      } else {
+        // For COD and UPI, create order directly
+        console.log('📍 [COD/UPI] Order Submission:');
+        
+        const deliveryAddress = `${data.firstName} ${data.lastName}, ${data.address}, ${data.city}, ${data.state} - ${data.pincode}`
+        const orderItems = items.map((item) => ({
+          productId: item.product.id,
+          quantity: item.quantity,
+          price: item.selectedUnit
+            ? item.selectedUnit.afterDiscountPrice
+            : item.product.price,
+          selectedUnit: item.selectedUnit,
+        }))
+
+        console.log('📦 Cart Items Count:', items.length);
+        console.log('📦 Order Items:', JSON.stringify(orderItems, null, 2));
+        console.log('💰 Total Amount:', total);
+        console.log('💳 Payment Method:', data.paymentMethod);
+        console.log('📧 Customer Email:', data.email)
+
+        // Call order creation API with COD/UPI details
+        try {
+          console.log('📡 Calling /api/orders/create endpoint...')
+          const res = await fetch('/api/orders/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: user?.id,
+              customerDetails: {
+                firstName: data.firstName,
+                lastName: data.lastName,
+                email: data.email,
+                phone: data.phone,
+                deliveryAddress,
+              },
+              orderItems,
+              total,
+              paymentMethod: data.paymentMethod,
+              paymentStatus: 'PENDING',
+            }),
+          })
+
+          console.log('📡 Create order response status:', res.status)
+          const orderData = await res.json()
+          console.log('✅ Backend response received:', JSON.stringify(orderData, null, 2));
+
+          if (!res.ok) {
+            console.error('❌ Backend error:', orderData)
+            throw new Error(orderData.message || 'Failed to create order')
+          }
+
+          console.log('✅ Order created successfully')
+          const orderId = orderData.orderId || orderData._id
+          
+          console.log('💾 Saving order to checkout store...')
+          console.log('  - Order ID:', orderId)
+          setOrderData(data)
+          setOrderId(orderId)
+          setPaymentStatus('PENDING')
+          
+          console.log('🗑️  Clearing cart...')
+          clearCart()
+          console.log('✅ Cart cleared successfully')
+          
+          toast.success('Order placed successfully!')
+          console.log('🔀 Redirecting to order-success page...')
+          router.push(`/order-success?orderId=${orderId}`)
+        } catch (error) {
+          console.error('❌ Order creation failed:', error);
+          if (error instanceof Error) {
+            console.error('❌ Error message:', error.message)
+          }
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : 'Failed to create order. Please try again.'
+          )
+          throw error
+        }
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : typeof error === 'string' 
+        ? error 
+        : 'Failed to place order'
+      
+      toast.error(`${errorMessage}. Please try again.`)
+      console.error('Order submission error:', error)
+    } finally {
+      setIsProcessing(false)
     }
   }
 
@@ -104,8 +454,8 @@ export default function CheckoutPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
       <div className="mb-6 flex items-center gap-2">
-        <Lock size={20} className="text-gold" />
-        <h1 className="text-3xl font-bold text-navy">Secure Checkout</h1>
+        <Lock size={20} className="text-gold-500" />
+        <h1 className="text-3xl font-bold text-navy-600">Secure Checkout</h1>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -114,7 +464,7 @@ export default function CheckoutPage() {
           <div className="flex-1 space-y-6">
             {/* Billing Address */}
             <div className="rounded-xl border border-gray-200 bg-white p-6">
-              <h2 className="mb-4 text-lg font-bold text-navy">
+              <h2 className="mb-4 text-lg font-bold text-navy-600">
                 Billing Address
               </h2>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -128,7 +478,7 @@ export default function CheckoutPage() {
                     placeholder="John"
                   />
                   {errors.firstName && (
-                    <p className="mt-1 text-xs text-error">
+                    <p className="mt-1 text-xs text-error-500">
                       {errors.firstName.message}
                     </p>
                   )}
@@ -143,7 +493,7 @@ export default function CheckoutPage() {
                     placeholder="Doe"
                   />
                   {errors.lastName && (
-                    <p className="mt-1 text-xs text-error">
+                    <p className="mt-1 text-xs text-error-500">
                       {errors.lastName.message}
                     </p>
                   )}
@@ -159,7 +509,7 @@ export default function CheckoutPage() {
                     placeholder="john@example.com"
                   />
                   {errors.email && (
-                    <p className="mt-1 text-xs text-error">
+                    <p className="mt-1 text-xs text-error-500">
                       {errors.email.message}
                     </p>
                   )}
@@ -175,7 +525,7 @@ export default function CheckoutPage() {
                     placeholder="9876543210"
                   />
                   {errors.phone && (
-                    <p className="mt-1 text-xs text-error">
+                    <p className="mt-1 text-xs text-error-500">
                       {errors.phone.message}
                     </p>
                   )}
@@ -190,7 +540,7 @@ export default function CheckoutPage() {
                     placeholder="123 Main Street"
                   />
                   {errors.address && (
-                    <p className="mt-1 text-xs text-error">
+                    <p className="mt-1 text-xs text-error-500">
                       {errors.address.message}
                     </p>
                   )}
@@ -205,7 +555,7 @@ export default function CheckoutPage() {
                     placeholder="Mumbai"
                   />
                   {errors.city && (
-                    <p className="mt-1 text-xs text-error">
+                    <p className="mt-1 text-xs text-error-500">
                       {errors.city.message}
                     </p>
                   )}
@@ -220,7 +570,7 @@ export default function CheckoutPage() {
                     placeholder="Maharashtra"
                   />
                   {errors.state && (
-                    <p className="mt-1 text-xs text-error">
+                    <p className="mt-1 text-xs text-error-500">
                       {errors.state.message}
                     </p>
                   )}
@@ -236,7 +586,7 @@ export default function CheckoutPage() {
                     maxLength={6}
                   />
                   {errors.pincode && (
-                    <p className="mt-1 text-xs text-error">
+                    <p className="mt-1 text-xs text-error-500">
                       {errors.pincode.message}
                     </p>
                   )}
@@ -246,30 +596,41 @@ export default function CheckoutPage() {
 
             {/* Payment Method */}
             <div className="rounded-xl border border-gray-200 bg-white p-6">
-              <h2 className="mb-4 text-lg font-bold text-navy">
-                Payment Method
-              </h2>
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-lg font-bold text-navy-600">
+                  Payment Method
+                </h2>
+                {!isRazorpayReady && (
+                  <span className="text-xs text-amber-600">Loading payment gateway...</span>
+                )}
+              </div>
               <div className="space-y-3">
                 {[
                   { value: 'cod', label: '💵 Cash on Delivery' },
                   { value: 'upi', label: '📱 UPI Payment' },
-                  { value: 'card', label: '💳 Credit / Debit Card' },
+                  { value: 'card', label: '💳 Credit / Debit Card', disabled: !isRazorpayReady },
                 ].map((method) => (
                   <label
                     key={method.value}
-                    className="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 p-3 hover:bg-gray-50"
+                    className={`flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 p-3 ${
+                      method.disabled ? 'opacity-50' : 'hover:bg-gray-50'
+                    }`}
                   >
                     <input
                       type="radio"
                       value={method.value}
+                      disabled={method.disabled}
                       {...register('paymentMethod')}
-                      className="accent-navy"
+                      className="accent-navy-600"
                     />
-                    <span className="text-sm font-medium">{method.label}</span>
+                    <span className={`text-sm font-medium ${method.disabled ? 'text-gray-500' : ''}`}>
+                      {method.label}
+                      {method.disabled && ' (Loading)'}
+                    </span>
                   </label>
                 ))}
                 {errors.paymentMethod && (
-                  <p className="text-xs text-error">
+                  <p className="text-xs text-error-500">
                     {errors.paymentMethod.message}
                   </p>
                 )}
@@ -280,35 +641,38 @@ export default function CheckoutPage() {
           {/* Right: Summary */}
           <div className="lg:w-80">
             <div className="sticky top-24 rounded-xl border border-gray-200 bg-white p-6">
-              <h2 className="mb-4 text-lg font-bold text-navy">
+              <h2 className="mb-4 text-lg font-bold text-navy-600">
                 Order Summary
               </h2>
               <div className="space-y-2">
                 {items.map((item) => (
                   <div
-                    key={item.product.id}
+                    key={item.id || `${item.product.id}-${item.selectedUnit?.unitId || 'base'}`}
                     className="flex justify-between text-sm"
                   >
                     <span className="text-gray-600">
                       {item.product.name} × {item.quantity}
                     </span>
                     <span className="font-medium">
-                      {formatCurrency(item.product.price * item.quantity)}
+                      {formatCurrency(
+                        item.totalPrice ||
+                        (item.unitPrice || item.selectedUnit?.afterDiscountPrice || item.product.price || 0) * item.quantity
+                      )}
                     </span>
                   </div>
                 ))}
               </div>
               <hr className="my-4" />
-              <div className="flex justify-between font-bold text-navy">
+              <div className="flex justify-between font-bold text-navy-600">
                 <span>Total</span>
                 <span>{formatCurrency(total)}</span>
               </div>
               <button
                 type="submit"
-                disabled={isSubmitting}
-                className="mt-6 w-full rounded-lg bg-gold py-3 font-bold text-white transition-colors hover:bg-yellow-600 disabled:opacity-50"
+                disabled={isSubmitting || isProcessing}
+                className="mt-6 w-full btn-secondary"
               >
-                {isSubmitting ? 'Placing Order...' : 'Place Order'}
+                {isSubmitting || isProcessing ? 'Processing...' : 'Place Order'}
               </button>
             </div>
           </div>

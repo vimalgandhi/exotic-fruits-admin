@@ -31,17 +31,17 @@ export function SearchInput({
   }, [value])
 
   return (
-    <div className="relative">
+    <div className="relative w-full">
       <Search
-        size={18}
-        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+        size={16}
+        className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 text-gray-400"
       />
       <input
         type="text"
         placeholder={placeholder}
         value={input}
         onChange={(e) => setInput(e.target.value)}
-        className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 focus:border-navy focus:outline-none focus:ring-1 focus:ring-navy"
+        className="w-full rounded-lg border border-gray-300 py-1.5 sm:py-2 pl-8 sm:pl-10 pr-3 sm:pr-4 text-sm focus:border-navy focus:outline-none focus:ring-1 focus:ring-navy"
       />
     </div>
   )

@@ -32,7 +32,7 @@ export default function RegisterPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
-        <h1 className="mb-2 text-2xl font-bold text-navy">Create Account</h1>
+        <h1 className="mb-2 text-2xl font-bold text-navy-600">Create Account</h1>
         <p className="mb-6 text-gray-500">Join Exotic Fruits today</p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -98,7 +98,7 @@ export default function RegisterPage() {
         </form>
         <p className="mt-6 text-center text-sm text-gray-500">
           Already have an account?{' '}
-          <Link href="/login" className="font-medium text-gold hover:underline">
+          <Link href="/login" className="font-medium text-gold-500 hover:underline">
             Sign in
           </Link>
         </p>

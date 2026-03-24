@@ -4,10 +4,13 @@ import { use, useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ShoppingCart, ArrowLeft, Star, Truck, Heart, CheckCircle } from 'lucide-react'
-import { useCartStore } from '@/store/cartStore'
+import { useCart } from '@/hooks/useCart'
+import { useAuth } from '@/hooks/useAuth'
+import { useWishlistStore } from '@/store/wishlistStore'
 import { toast } from 'sonner'
 import { notFound } from 'next/navigation'
 import { getProduct, getAllProducts, toggleWishlist } from '@/lib/api'
+import type { Product } from '@/types'
 
 interface PriceOption {
   unitId: number
@@ -89,8 +92,10 @@ export default function ProductDetailPage({
   const [quantity, setQuantity] = useState(1)
   const [selectedPriceIndex, setSelectedPriceIndex] = useState(0)
   const [inWishlist, setInWishlist] = useState(false)
+  const [isAdding, setIsAdding] = useState(false)
 
-  const addItem = useCartStore((s) => s.addItem)
+  const { addItem } = useCart()
+  const { isAuthenticated } = useAuth()
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -130,33 +135,50 @@ export default function ProductDetailPage({
     fetchProduct()
   }, [slug])
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!product) return
+    
+    if (!isAuthenticated) {
+      toast.error('Please login to add items to cart')
+      return
+    }
+
     const isOutOfStock = product.stockStatus === 'Out of Stock' || product.stock === 'Out of Stock'
     if (isOutOfStock) {
       toast.error('Product is out of stock')
       return
     }
 
-    const selectedPrice = product.pricelist?.[selectedPriceIndex]
-    const cartPrice = selectedPrice?.afterDiscountPrice || product.price || 0
-    const cartUnit = selectedPrice?.unitName || 'Unit'
+    try {
+      setIsAdding(true)
+      const selectedPrice = product.pricelist?.[selectedPriceIndex]
+      
+      // Debug: log the selected price
+      console.log('Selected price:', selectedPrice)
+      console.log('Product pricelist:', product.pricelist)
+      console.log('Selected price index:', selectedPriceIndex)
 
-    addItem(
-      {
-        id: product.id,
-        name: product.name,
-        slug: product.slug,
-        price: cartPrice,
-        image: product.image,
-        category: product.category || '',
-        stock: (product.stockStatus || product.stock) as 'In Stock' | 'Out of Stock',
-        description: product.description,
-        origin: product.origin,
-      },
-      quantity,
-    )
-    toast.success(`${product.name} (${cartUnit} × ${quantity}) added to cart!`)
+      await addItem(
+        {
+          id: product.id,
+          name: product.name,
+          slug: product.slug,
+          price: selectedPrice?.afterDiscountPrice || product.price || 0,
+          image: product.image,
+          category: product.category || '',
+          stock: (product.stockStatus || product.stock) as 'In Stock' | 'Out of Stock',
+          description: product.description,
+          origin: product.origin,
+        },
+        quantity,
+        selectedPrice as any,
+      )
+      // addItem already shows success toast
+    } catch (error) {
+      console.error('Add to cart error:', error)
+    } finally {
+      setIsAdding(false)
+    }
   }
 
   if (loading) {
@@ -181,7 +203,7 @@ export default function ProductDetailPage({
     <div className="mx-auto max-w-7xl px-4 py-8">
       <Link
         href="/products"
-        className="mb-6 inline-flex items-center gap-2 text-sm text-gray-600 hover:text-navy"
+        className="mb-6 inline-flex items-center gap-2 text-sm text-gray-600 hover:text-navy-600"
       >
         <ArrowLeft size={16} />
         Back to Products
@@ -206,15 +228,15 @@ export default function ProductDetailPage({
 
         {/* Details */}
         <div>
-          <span className="rounded-full bg-gold bg-opacity-10 px-3 py-1 text-sm font-medium text-gold">
+          <span className="rounded-full bg-gold-500 bg-opacity-10 px-3 py-1 text-sm font-medium text-gold-500">
             {product.category}
           </span>
-          <h1 className="mt-3 text-3xl font-bold text-navy">{product.name}</h1>
+          <h1 className="mt-3 text-3xl font-bold text-navy-600">{product.name}</h1>
           <p className="mt-1 text-gray-500">Origin: {product.origin}</p>
 
           <div className="mt-2 flex items-center gap-2">
             {[1, 2, 3, 4, 5].map((s) => (
-              <Star key={s} size={16} className="fill-gold text-gold" />
+              <Star key={s} size={16} className="fill-gold-500 text-gold-500" />
             ))}
             <span className="text-sm text-gray-500">(4.8 / 5.0)</span>
           </div>
@@ -229,8 +251,8 @@ export default function ProductDetailPage({
                     onClick={() => setSelectedPriceIndex(idx)}
                     className={`rounded-lg border-2 p-4 transition-all ${
                       selectedPriceIndex === idx
-                        ? 'border-navy bg-navy bg-opacity-5'
-                        : 'border-gray-200 hover:border-navy'
+                        ? 'border-navy-600 bg-navy-600 bg-opacity-5'
+                        : 'border-gray-200 hover:border-navy-600'
                     }`}
                   >
                     <div className="text-left">
@@ -238,7 +260,7 @@ export default function ProductDetailPage({
                         {option.unitName}
                       </p>
                       <div className="mt-2 flex items-baseline gap-2">
-                        <span className="text-2xl font-bold text-navy">
+                        <span className="text-2xl font-bold text-navy-600">
                           ₹{option.afterDiscountPrice}
                         </span>
                         {option.discount && (
@@ -258,15 +280,15 @@ export default function ProductDetailPage({
               </div>
             </div>
           ) : (
-            <p className="mt-4 text-4xl font-bold text-navy">₹{product.price}</p>
+            <p className="mt-4 text-4xl font-bold text-navy-600">₹{product.price}</p>
           )}
 
           <div className="mt-3">
             <span
               className={`rounded-full px-3 py-1 text-sm font-medium ${
                 product.stockStatus === 'In Stock' || product.stock === 'In Stock'
-                  ? 'bg-green-100 text-success'
-                  : 'bg-red-100 text-error'
+                  ? 'bg-success-50 text-success-600'
+                  : 'bg-error-50 text-error-500'
               }`}
             >
               {product.stockStatus || product.stock}
@@ -302,17 +324,41 @@ export default function ProductDetailPage({
             <button
               onClick={handleAddToCart}
               disabled={
+                isAdding ||
                 product.stockStatus === 'Out of Stock' ||
                 product.stock === 'Out of Stock'
               }
-              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-navy py-3 font-semibold text-white transition-colors hover:bg-blue-900 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex flex-1 items-center justify-center gap-2 btn-primary"
             >
               <ShoppingCart size={20} />
-              Add to Cart
+              {isAdding ? 'Adding...' : 'Add to Cart'}
             </button>
             <button
               onClick={async () => {
                 setInWishlist(!inWishlist)
+                
+                // Update Zustand store optimistically
+                if (inWishlist) {
+                  useWishlistStore.setState((state) => ({
+                    items: state.items.filter((item) => item.id !== product.id),
+                  }));
+                } else {
+                  const productToAdd: Product = {
+                    id: product.id,
+                    name: product.name,
+                    slug: product.slug,
+                    price: product.price ?? 0,
+                    image: product.image,
+                    category: product.category || '',
+                    stock: product.stock === 'Out of Stock' ? 'Out of Stock' : 'In Stock',
+                    description: product.description || '',
+                    origin: product.origin || '',
+                  }
+                  useWishlistStore.setState((state) => ({
+                    items: [...state.items, productToAdd],
+                  }));
+                }
+                
                 try {
                   await toggleWishlist(product.id)
                 } catch {
@@ -341,14 +387,14 @@ export default function ProductDetailPage({
           {/* Info */}
           <div className="mt-6 grid grid-cols-2 gap-4">
             <div className="flex items-center gap-3 rounded-lg border p-3">
-              <Truck size={20} className="text-gold" />
+              <Truck size={20} className="text-gold-500" />
               <div>
                 <p className="text-sm font-medium">Free Delivery</p>
                 <p className="text-xs text-gray-500">Orders above ₹999</p>
               </div>
             </div>
             <div className="flex items-center gap-3 rounded-lg border p-3">
-              <CheckCircle size={20} className="text-gold" />
+              <CheckCircle size={20} className="text-gold-500" />
               <div>
                 <p className="text-sm font-medium">Fresh Guarantee</p>
                 <p className="text-xs text-gray-500">100% fresh or refund</p>
@@ -361,7 +407,7 @@ export default function ProductDetailPage({
       {/* Related Products */}
       {related.length > 0 && (
         <section className="mt-16">
-          <h2 className="mb-6 text-2xl font-bold text-navy">Related Products</h2>
+          <h2 className="mb-6 text-2xl font-bold text-navy-600">Related Products</h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {related.map((p) => (
               <Link
@@ -384,8 +430,8 @@ export default function ProductDetailPage({
                   )}
                 </div>
                 <div className="p-4">
-                  <h3 className="font-semibold text-navy">{p.name}</h3>
-                  <p className="mt-1 text-lg font-bold text-gold">₹{p.price}</p>
+                  <h3 className="font-semibold text-navy-600">{p.name}</h3>
+                  <p className="mt-1 text-lg font-bold text-gold-500">₹{p.price}</p>
                 </div>
               </Link>
             ))}

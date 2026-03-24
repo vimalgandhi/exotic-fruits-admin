@@ -25,7 +25,7 @@ export function ConfirmDialog({
       <div className="flex justify-end gap-3">
         <button
           onClick={onCancel}
-          className="rounded bg-gray-200 px-4 py-2 text-navy hover:bg-gray-300"
+          className="rounded bg-gray-200 px-4 py-2 text-navy-600 hover:bg-gray-300"
         >
           Cancel
         </button>
@@ -33,8 +33,8 @@ export function ConfirmDialog({
           onClick={onConfirm}
           className={`rounded px-4 py-2 text-white transition-colors ${
             isDangerous
-              ? 'bg-error hover:bg-red-700'
-              : 'bg-navy hover:bg-blue-900'
+              ? 'btn-danger'
+              : 'btn-primary'
           }`}
         >
           Confirm

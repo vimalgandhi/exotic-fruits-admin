@@ -1,12 +1,12 @@
 export default function TermsPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
-      <h1 className="mb-2 text-3xl font-bold text-navy">Terms &amp; Conditions</h1>
+      <h1 className="mb-2 text-3xl font-bold text-navy-600">Terms &amp; Conditions</h1>
       <p className="mb-8 text-sm text-gray-500">Last updated: 1 January 2025</p>
 
       <div className="space-y-8 text-gray-700">
         <section>
-          <h2 className="mb-3 text-xl font-semibold text-navy">
+          <h2 className="mb-3 text-xl font-semibold text-navy-600">
             1. Acceptance of Terms
           </h2>
           <p>
@@ -18,7 +18,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-semibold text-navy">
+          <h2 className="mb-3 text-xl font-semibold text-navy-600">
             2. Products &amp; Pricing
           </h2>
           <p>
@@ -31,7 +31,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-semibold text-navy">
+          <h2 className="mb-3 text-xl font-semibold text-navy-600">
             3. Orders &amp; Payment
           </h2>
           <p>
@@ -43,7 +43,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-semibold text-navy">
+          <h2 className="mb-3 text-xl font-semibold text-navy-600">
             4. Delivery
           </h2>
           <p>
@@ -56,7 +56,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-semibold text-navy">
+          <h2 className="mb-3 text-xl font-semibold text-navy-600">
             5. Returns &amp; Refunds
           </h2>
           <p>
@@ -68,7 +68,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-semibold text-navy">
+          <h2 className="mb-3 text-xl font-semibold text-navy-600">
             6. Intellectual Property
           </h2>
           <p>
@@ -80,7 +80,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-semibold text-navy">
+          <h2 className="mb-3 text-xl font-semibold text-navy-600">
             7. Limitation of Liability
           </h2>
           <p>
@@ -92,7 +92,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-semibold text-navy">
+          <h2 className="mb-3 text-xl font-semibold text-navy-600">
             8. Governing Law
           </h2>
           <p>
@@ -103,7 +103,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-semibold text-navy">
+          <h2 className="mb-3 text-xl font-semibold text-navy-600">
             9. Changes to Terms
           </h2>
           <p>
@@ -115,7 +115,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-semibold text-navy">
+          <h2 className="mb-3 text-xl font-semibold text-navy-600">
             10. Contact Us
           </h2>
           <p>
@@ -123,7 +123,7 @@ export default function TermsPage() {
             contact us at{' '}
             <a
               href="mailto:legal@exoticfruits.in"
-              className="text-navy underline hover:text-gold"
+              className="text-navy-600 underline hover:text-gold-500"
             >
               legal@exoticfruits.in
             </a>

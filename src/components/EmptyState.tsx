@@ -23,12 +23,12 @@ export function EmptyState({
       <div className="mb-4 text-gray-400">
         {icon || <PackageOpen size={64} />}
       </div>
-      <p className="text-xl font-bold text-navy">{title}</p>
+      <p className="text-xl font-bold text-navy-600">{title}</p>
       <p className="mt-2 text-center text-gray-500">{description}</p>
       {actionLabel && onAction && (
         <button
           onClick={onAction}
-          className="mt-6 rounded bg-gold px-6 py-2 text-white transition-colors hover:bg-yellow-600"
+          className="btn-secondary mt-6"
         >
           {actionLabel}
         </button>

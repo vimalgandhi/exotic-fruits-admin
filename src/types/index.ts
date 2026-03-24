@@ -22,6 +22,7 @@ export interface SeoData {
 }
 
 export interface Product {
+  selectedUnit?: any
   id: string
   name: string
   slug: string
@@ -47,9 +48,12 @@ export interface Product {
 }
 
 export interface CartItem {
+  id?: number
   product: Product
   quantity: number
   selectedUnit?: PriceListItem
+  unitPrice?: number
+  totalPrice?: number
 }
 
 export interface WishlistItem {

@@ -43,11 +43,11 @@ export function ProductPagination({
     <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
       {/* Results counter */}
       <p className="text-sm text-gray-600">
-        Showing{' '}
-        <span className="font-medium text-navy">
+        Showing {' '}
+        <span className="font-medium text-navy-600">
           {startItem}–{endItem}
         </span>{' '}
-        of <span className="font-medium text-navy">{totalItems}</span> products
+        of <span className="font-medium text-navy-600">{totalItems}</span> products
       </p>
 
       {/* Pagination controls */}
@@ -57,7 +57,7 @@ export function ProductPagination({
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
             aria-label="Previous page"
-            className="flex items-center gap-1 rounded bg-navy px-3 py-2 text-sm text-white transition-opacity disabled:opacity-40 disabled:hover:bg-navy hover:bg-blue-900"
+            className="flex items-center gap-1 btn-primary"
           >
             <ChevronLeft size={16} />
             <span className="hidden sm:inline">Prev</span>
@@ -81,8 +81,8 @@ export function ProductPagination({
                   aria-current={currentPage === item ? 'page' : undefined}
                   className={`rounded px-3 py-2 text-sm transition-colors ${
                     currentPage === item
-                      ? 'bg-gold font-medium text-white'
-                      : 'bg-gray-100 text-navy hover:bg-gray-200'
+                      ? 'bg-gold-500 font-medium text-white'
+                      : 'bg-gray-100 text-navy-600 hover:bg-gray-200'
                   }`}
                 >
                   {item}
@@ -100,7 +100,7 @@ export function ProductPagination({
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
             aria-label="Next page"
-            className="flex items-center gap-1 rounded bg-navy px-3 py-2 text-sm text-white transition-opacity disabled:opacity-40 disabled:hover:bg-navy hover:bg-blue-900"
+            className="flex items-center gap-1 btn-primary"
           >
             <span className="hidden sm:inline">Next</span>
             <ChevronRight size={16} />

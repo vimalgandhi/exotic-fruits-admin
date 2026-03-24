@@ -34,10 +34,10 @@ export function ProductSort() {
   )
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 w-full sm:w-auto">
       <label
         htmlFor="sort-select"
-        className="shrink-0 text-sm font-medium text-gray-700"
+        className="shrink-0 text-sm font-medium text-gray-700 hidden sm:inline"
       >
         Sort by:
       </label>
@@ -46,7 +46,7 @@ export function ProductSort() {
         value={currentSort}
         onChange={(e) => handleChange(e.target.value)}
         aria-label="Sort products"
-        className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-navy focus:border-navy focus:outline-none focus:ring-1 focus:ring-navy"
+        className="w-full sm:w-auto rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs sm:text-sm text-navy-600 focus:border-navy-600 focus:outline-none focus:ring-1 focus:ring-navy-600"
       >
         {SORT_OPTIONS.map((opt) => (
           <option key={opt.value} value={opt.value}>
