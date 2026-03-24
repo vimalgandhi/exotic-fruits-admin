@@ -10,31 +10,48 @@ const createRazorpayOrder = async (req, res, next) => {
   try {
     const { order_id } = req.body;
 
+    // Validate order_id
+    if (!order_id) {
+      return sendError(res, 400, 'MISSING_ORDER_ID', 'Order ID is required');
+    }
+
     const order = await Order.findOne({ where: { id: order_id, user_id: req.user.id } });
     if (!order) return sendError(res, 404, 'NOT_FOUND', 'Order not found');
 
+    // Validate order amount
+    const amount = Math.round(parseFloat(order.total_amount) * 100); // paise
+    if (!amount || amount <= 0) {
+      return sendError(res, 400, 'INVALID_AMOUNT', 'Order amount must be greater than 0');
+    }
+
     const options = {
-      amount: Math.round(parseFloat(order.total_amount) * 100), // paise
+      amount: amount,
       currency: 'INR',
-      receipt: order.order_number
+      receipt: order.order_number.toString()
     };
 
-    const razorpayOrder = await razorpay.orders.create(options);
+    try {
+      const razorpayOrder = await razorpay.orders.create(options);
 
-    await Payment.create({
-      order_id: order.id,
-      user_id: req.user.id,
-      razorpay_order_id: razorpayOrder.id,
-      amount: order.total_amount,
-      status: 'pending'
-    });
+      await Payment.create({
+        order_id: order.id,
+        user_id: req.user.id,
+        razorpay_order_id: razorpayOrder.id,
+        amount: order.total_amount,
+        status: 'pending'
+      });
 
-    return sendSuccess(res, 201, {
-      razorpay_order_id: razorpayOrder.id,
-      amount: razorpayOrder.amount,
-      currency: razorpayOrder.currency,
-      key_id: process.env.RAZORPAY_KEY_ID
-    }, 'Razorpay order created');
+      return sendSuccess(res, 201, {
+        razorpay_order_id: razorpayOrder.id,
+        amount: razorpayOrder.amount,
+        currency: razorpayOrder.currency,
+        key_id: process.env.RAZORPAY_KEY_ID
+      }, 'Razorpay order created');
+    } catch (razorpayError) {
+      console.error('Razorpay API Error:', razorpayError.message);
+      console.error('Razorpay Error Details:', razorpayError);
+      return sendError(res, 400, 'RAZORPAY_ERROR', `Failed to create Razorpay order: ${razorpayError.message}`);
+    }
   } catch (err) {
     next(err);
   }

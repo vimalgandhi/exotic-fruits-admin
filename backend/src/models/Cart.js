@@ -27,10 +27,15 @@ const Cart = sequelize.define('Cart', {
   unit_price: {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: false
+  },
+  selected_unit: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    comment: 'Stores selected price list unit information'
   }
 }, {
   tableName: 'cart_items',
-  timestamps: false
+  timestamps: true
 });
 
 module.exports = Cart;

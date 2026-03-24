@@ -15,7 +15,21 @@ const getUserOrders = async (req, res, next) => {
       where: { user_id: req.user.id },
       order: [['createdAt', 'DESC']],
       limit,
-      offset
+      offset,
+      include: [{
+        model: OrderItem,
+        as: 'items',
+        include: [{
+          model: Product,
+          as: 'product',
+          attributes: ['id', 'name', 'image', 'description', 'price'],
+          include: [{
+            model: require('../models/Category'),
+            as: 'category',
+            attributes: ['id', 'name', 'slug']
+          }]
+        }]
+      }]
     });
     return sendPaginated(res, rows, count, page, limit, 'Orders retrieved');
   } catch (err) {
@@ -30,12 +44,209 @@ const getOrder = async (req, res, next) => {
       include: [{
         model: OrderItem,
         as: 'items',
-        include: [{ model: Product, as: 'product', attributes: ['id', 'name', 'image'] }]
+        include: [{
+          model: Product,
+          as: 'product',
+          attributes: ['id', 'name', 'image', 'description', 'price'],
+          include: [{
+            model: require('../models/Category'),
+            as: 'category',
+            attributes: ['id', 'name', 'slug']
+          }]
+        }]
       }]
     });
     if (!order) return sendError(res, 404, 'NOT_FOUND', 'Order not found');
     return sendSuccess(res, 200, order, 'Order retrieved');
   } catch (err) {
+    next(err);
+  }
+};
+
+const createPaymentOrder = async (req, res, next) => {
+  const t = await sequelize.transaction();
+  try {
+    const { userId, customerDetails, orderItems, total, paymentMethod, paymentStatus, razorpayPaymentId, razorpayOrderId } = req.body;
+    // Validate input
+    if (!customerDetails || !orderItems || !total) {
+      await t.rollback();
+      console.error('❌ Missing required data', { customerDetails: !!customerDetails, orderItems: !!orderItems, total });
+      return sendError(res, 400, 'INVALID_INPUT', 'Missing required data: customerDetails, orderItems, or total');
+    }
+
+    const { firstName, lastName, email, phone, deliveryAddress } = customerDetails;
+    
+    if (!firstName || !lastName || !email || !phone || !deliveryAddress) {
+      await t.rollback();
+      console.error('❌ Incomplete customer details');
+      return sendError(res, 400, 'INVALID_CUSTOMER', 'All customer details required: firstName, lastName, email, phone, deliveryAddress');
+    }
+
+    if (!Array.isArray(orderItems) || orderItems.length === 0) {
+      await t.rollback();
+      console.error('❌ Invalid order items');
+      return sendError(res, 400, 'INVALID_ITEMS', 'Order must contain at least one item');
+    }
+
+    let calculatedTotal = 0;
+    const validatedItems = [];
+    const productIds = orderItems.map(i => parseInt(i.productId));
+
+    // Fetch all products from database (fresh prices)
+    const products = await Product.findAll({
+      where: { id: productIds },
+      transaction: t
+    });
+
+    const productMap = {};
+    products.forEach(p => {
+      productMap[p.id] = p;
+    });
+
+    // Validate each item
+    for (const frontendItem of orderItems) {
+      const productId = parseInt(frontendItem.productId);
+      const quantity = parseInt(frontendItem.quantity) || 0;
+
+      if (quantity <= 0) {
+        await t.rollback();
+        return sendError(res, 400, 'INVALID_QUANTITY', `Invalid quantity for product ${productId}`);
+      }
+
+      const product = productMap[productId];
+      if (!product) {
+        await t.rollback();
+        return sendError(res, 400, 'PRODUCT_NOT_FOUND', `Product ${productId} not found`);
+      }
+
+      // Parse pricelist from database
+      let pricelistOptions = [];
+      try {
+        if (product.pricelist) {
+          pricelistOptions = typeof product.pricelist === 'string' 
+            ? JSON.parse(product.pricelist) 
+            : product.pricelist;
+        }
+      } catch (e) {
+        console.error(`Failed to parse pricelist for product ${productId}:`, e);
+      }
+
+      // Determine the correct price to use
+      let dbPrice;
+      let unitName = 'Unit';
+
+      if (pricelistOptions.length > 0 && frontendItem.selectedUnit) {
+        let matchedUnit = pricelistOptions.find(
+          pl => pl.unitId === frontendItem.selectedUnit?.unitId
+        );
+        
+        if (!matchedUnit) {
+          matchedUnit = pricelistOptions.find(
+            pl => pl.unitName === frontendItem.selectedUnit?.unitName
+          );
+        }
+        
+        if (matchedUnit) {
+          dbPrice = parseFloat(matchedUnit.afterDiscountPrice);
+          unitName = matchedUnit.unitName;
+          console.log(`✅ Matched unit for product ${productId}: ${unitName} - ₹${dbPrice}`);
+        } else {
+          dbPrice = parseFloat(pricelistOptions[0].afterDiscountPrice);
+          unitName = pricelistOptions[0].unitName;
+          console.warn(`⚠️ Unit not found for product ${productId}, using first option: ${unitName}`);
+        }
+      } else if (pricelistOptions.length > 0) {
+        dbPrice = parseFloat(pricelistOptions[0].afterDiscountPrice);
+        unitName = pricelistOptions[0].unitName;
+      } else {
+        await t.rollback();
+        return sendError(res, 400, 'NO_PRICE', `Product ${productId} has no pricing information`);
+      }
+
+      const itemSubtotal = dbPrice * quantity;
+      calculatedTotal += itemSubtotal;
+
+      console.log(`📦 Item ${productId}: Qty ${quantity} × ₹${dbPrice} = ₹${itemSubtotal}`);
+
+      validatedItems.push({
+        product_id: productId,
+        quantity: quantity,
+        unit_price: dbPrice,
+        subtotal: itemSubtotal
+      });
+    }
+
+    // Verify total amount (allow small difference due to rounding)
+    const clientTotal = parseFloat(total) || 0;
+    if (Math.abs(clientTotal - calculatedTotal) > 1) {
+      console.warn(`⚠️ TOTAL MISMATCH: DB: ₹${calculatedTotal}, Client: ₹${clientTotal}`);
+      // Still proceed but log it
+    }
+
+    console.log(`💰 Final total: ₹${calculatedTotal} (Client sent: ₹${clientTotal})`);
+
+    // Generate order number
+    const orderNumber = `PAY-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+
+    // Create order
+    const orderData = {
+      user_id: userId,
+      order_number: orderNumber,
+      total_amount: calculatedTotal,
+      delivery_address: deliveryAddress,
+      status: paymentStatus === 'PAID' ? 'confirmed' : 'pending',
+      tamper_detected: Math.abs(clientTotal - calculatedTotal) > 1,
+      payment_method: paymentMethod,
+      customer_email: email,
+      customer_phone: phone,
+      customer_name: `${firstName} ${lastName}`
+    };
+
+    const order = await Order.create(orderData, { transaction: t });
+    // Create order items
+    const orderItemsData = validatedItems.map((item, idx) => ({
+      order_id: order.id,
+      product_id: item.product_id,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      subtotal: item.subtotal
+    }));
+
+    await OrderItem.bulkCreate(orderItemsData, { transaction: t });
+
+    // Store payment details if provided
+    if (razorpayPaymentId || razorpayOrderId) {
+      const Payment = require('../models/Payment');
+      try {
+        await Payment.create({
+          order_id: order.id,
+          user_id: userId || null,
+          razorpay_order_id: razorpayOrderId,
+          razorpay_payment_id: razorpayPaymentId,
+          amount: calculatedTotal,
+          status: paymentStatus === 'PAID' ? 'completed' : 'pending'
+        }, { transaction: t });
+        console.log(`✅ Payment record created`);
+      } catch (paymentErr) {
+        console.error('⚠️ Failed to create payment record:', paymentErr.message);
+        // Don't fail the order if payment record fails
+      }
+    }
+
+    await t.commit();
+    console.log(`✅ Order transaction committed successfully`);
+
+    return sendSuccess(res, 201, {
+      orderId: order.id,
+      orderNumber: order.order_number,
+      totalAmount: order.total_amount,
+      status: order.status
+    }, 'Order created successfully from payment');
+
+  } catch (err) {
+    await t.rollback();
+    console.error('❌ Order creation error:', err.message);
+    console.error('Stack:', err.stack);
     next(err);
   }
 };
@@ -103,22 +314,36 @@ const createOrder = async (req, res, next) => {
 
       // If pricelist exists and frontend sent a unit, validate against pricelist
       if (pricelistOptions.length > 0 && frontendItem.selectedUnit) {
-        const matchedUnit = pricelistOptions.find(
-          pl => pl.unitName === frontendItem.selectedUnit?.unitName
+        // Try matching by unitId first (most reliable)
+        let matchedUnit = pricelistOptions.find(
+          pl => pl.unitId === frontendItem.selectedUnit?.unitId
         );
+        
+        // Fallback to unitName if unitId not found
+        if (!matchedUnit) {
+          matchedUnit = pricelistOptions.find(
+            pl => pl.unitName === frontendItem.selectedUnit?.unitName
+          );
+        }
         
         if (matchedUnit) {
           dbPrice = parseFloat(matchedUnit.afterDiscountPrice);
           unitName = matchedUnit.unitName;
         } else {
           // Unit not found in pricelist - potential tampering
-          console.warn(`⚠️ UNIT TAMPERING: Product ${productId} - Unit "${frontendItem.selectedUnit?.unitName}" not found in pricelist`);
           priceTamperDetected = true;
-          dbPrice = parseFloat(product.price); // Fallback to base price
+          // Use first available unit from pricelist
+          dbPrice = parseFloat(pricelistOptions[0].afterDiscountPrice);
+          unitName = pricelistOptions[0].unitName;
         }
+      } else if (pricelistOptions.length > 0) {
+        // No unit selected, use first available price from pricelist
+        dbPrice = parseFloat(pricelistOptions[0].afterDiscountPrice);
+        unitName = pricelistOptions[0].unitName;
       } else {
-        // No pricelist, use base price
-        dbPrice = parseFloat(product.price);
+        // No pricelist available - this is an error
+        await t.rollback();
+        return sendError(res, 400, 'NO_PRICE', `Product ${productId} has no pricing information`);
       }
 
       // Compare frontend price with database price
@@ -162,7 +387,7 @@ const createOrder = async (req, res, next) => {
     }, { transaction: t });
 
     // Create order items with server-validated prices
-    const orderItemsData = validatedItems.map((item) => ({
+    const orderItemsData = validatedItems.map((item, idx) => ({
       order_id: order.id,
       product_id: item.product_id,
       quantity: item.quantity,
@@ -212,4 +437,4 @@ const getAllOrders = async (req, res, next) => {
   }
 };
 
-module.exports = { getUserOrders, getOrder, createOrder, updateOrderStatus, getAllOrders };
+module.exports = { getUserOrders, getOrder, createOrder, createPaymentOrder, updateOrderStatus, getAllOrders };

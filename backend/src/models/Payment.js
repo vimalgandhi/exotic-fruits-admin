@@ -16,8 +16,9 @@ const Payment = sequelize.define('Payment', {
   },
   user_id: {
     type: DataTypes.INTEGER,
-    allowNull: false,
-    references: { model: 'users', key: 'id' }
+    allowNull: true, // Allow null for guest payments
+    references: { model: 'users', key: 'id' },
+    onDelete: 'SET NULL'
   },
   razorpay_order_id: {
     type: DataTypes.STRING(100),

@@ -11,8 +11,9 @@ const Order = sequelize.define('Order', {
   },
   user_id: {
     type: DataTypes.INTEGER,
-    allowNull: false,
-    references: { model: 'users', key: 'id' }
+    allowNull: true, // Allow null for guest checkout
+    references: { model: 'users', key: 'id' },
+    onDelete: 'SET NULL'
   },
   order_number: {
     type: DataTypes.STRING(50),
@@ -30,6 +31,26 @@ const Order = sequelize.define('Order', {
   delivery_address: {
     type: DataTypes.TEXT,
     allowNull: true
+  },
+  payment_method: {
+    type: DataTypes.ENUM('cod', 'upi', 'card'),
+    allowNull: true,
+    comment: 'COD, UPI, or Card payment method'
+  },
+  customer_name: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    comment: 'Customer name for guest orders'
+  },
+  customer_email: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    comment: 'Customer email for guest orders and notifications'
+  },
+  customer_phone: {
+    type: DataTypes.STRING(20),
+    allowNull: true,
+    comment: 'Customer phone for guest orders'
   },
   tamper_detected: {
     type: DataTypes.BOOLEAN,
