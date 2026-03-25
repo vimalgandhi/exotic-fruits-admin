@@ -4,7 +4,7 @@ const cors = require('cors');
 
 const allowedOrigins = [
   process.env.FRONTEND_URL || 'http://localhost:3000',
-  'http://localhost:3001'
+  process.env.FRONTEND_ADMIN_URL || 'http://localhost:3001',
 ];
 
 const corsOptions = {
