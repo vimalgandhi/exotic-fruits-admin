@@ -1,5 +1,6 @@
 'use strict';
 
+const { Op } = require('sequelize');
 const Cart = require('../models/Cart');
 const Order = require('../models/Order');
 const OrderItem = require('../models/OrderItem');
@@ -39,8 +40,13 @@ const getUserOrders = async (req, res, next) => {
 
 const getOrder = async (req, res, next) => {
   try {
+    // Admins can view any order, users can only view their own or guest orders
+    const whereClause = req.user.role === 'admin' 
+      ? { id: req.params.id }
+      : { id: req.params.id, [Op.or]: [{ user_id: req.user.id }, { user_id: null }] };
+    
     const order = await Order.findOne({
-      where: { id: req.params.id, user_id: req.user.id },
+      where: whereClause,
       include: [{
         model: OrderItem,
         as: 'items',
@@ -134,6 +140,7 @@ const createPaymentOrder = async (req, res, next) => {
       // Determine the correct price to use
       let dbPrice;
       let unitName = 'Unit';
+      let selectedUnit = null;
 
       if (pricelistOptions.length > 0 && frontendItem.selectedUnit) {
         let matchedUnit = pricelistOptions.find(
@@ -149,15 +156,18 @@ const createPaymentOrder = async (req, res, next) => {
         if (matchedUnit) {
           dbPrice = parseFloat(matchedUnit.afterDiscountPrice);
           unitName = matchedUnit.unitName;
+          selectedUnit = matchedUnit;
           console.log(`✅ Matched unit for product ${productId}: ${unitName} - ₹${dbPrice}`);
         } else {
           dbPrice = parseFloat(pricelistOptions[0].afterDiscountPrice);
           unitName = pricelistOptions[0].unitName;
+          selectedUnit = pricelistOptions[0];
           console.warn(`⚠️ Unit not found for product ${productId}, using first option: ${unitName}`);
         }
       } else if (pricelistOptions.length > 0) {
         dbPrice = parseFloat(pricelistOptions[0].afterDiscountPrice);
         unitName = pricelistOptions[0].unitName;
+        selectedUnit = pricelistOptions[0];
       } else {
         await t.rollback();
         return sendError(res, 400, 'NO_PRICE', `Product ${productId} has no pricing information`);
@@ -172,7 +182,8 @@ const createPaymentOrder = async (req, res, next) => {
         product_id: productId,
         quantity: quantity,
         unit_price: dbPrice,
-        subtotal: itemSubtotal
+        subtotal: itemSubtotal,
+        selected_unit: selectedUnit
       });
     }
 
@@ -209,7 +220,8 @@ const createPaymentOrder = async (req, res, next) => {
       product_id: item.product_id,
       quantity: item.quantity,
       unit_price: item.unit_price,
-      subtotal: item.subtotal
+      subtotal: item.subtotal,
+      selected_unit: item.selected_unit
     }));
 
     await OrderItem.bulkCreate(orderItemsData, { transaction: t });
@@ -311,6 +323,7 @@ const createOrder = async (req, res, next) => {
       // Determine the correct price to use
       let dbPrice;
       let unitName = 'Unit';
+      let selectedUnit = null;
 
       // If pricelist exists and frontend sent a unit, validate against pricelist
       if (pricelistOptions.length > 0 && frontendItem.selectedUnit) {
@@ -329,17 +342,20 @@ const createOrder = async (req, res, next) => {
         if (matchedUnit) {
           dbPrice = parseFloat(matchedUnit.afterDiscountPrice);
           unitName = matchedUnit.unitName;
+          selectedUnit = matchedUnit;
         } else {
           // Unit not found in pricelist - potential tampering
           priceTamperDetected = true;
           // Use first available unit from pricelist
           dbPrice = parseFloat(pricelistOptions[0].afterDiscountPrice);
           unitName = pricelistOptions[0].unitName;
+          selectedUnit = pricelistOptions[0];
         }
       } else if (pricelistOptions.length > 0) {
         // No unit selected, use first available price from pricelist
         dbPrice = parseFloat(pricelistOptions[0].afterDiscountPrice);
         unitName = pricelistOptions[0].unitName;
+        selectedUnit = pricelistOptions[0];
       } else {
         // No pricelist available - this is an error
         await t.rollback();
@@ -362,7 +378,8 @@ const createOrder = async (req, res, next) => {
         product_id: productId,
         quantity: quantity,
         unit_price: dbPrice,      // Use DB price (not frontend price)
-        subtotal: itemSubtotal
+        subtotal: itemSubtotal,
+        selected_unit: selectedUnit
       });
     }
 
@@ -392,7 +409,8 @@ const createOrder = async (req, res, next) => {
       product_id: item.product_id,
       quantity: item.quantity,
       unit_price: item.unit_price,
-      subtotal: item.subtotal
+      subtotal: item.subtotal,
+      selected_unit: item.selected_unit
     }));
 
     await OrderItem.bulkCreate(orderItemsData, { transaction: t });

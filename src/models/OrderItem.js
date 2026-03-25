@@ -30,6 +30,11 @@ const OrderItem = sequelize.define('OrderItem', {
   subtotal: {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: false
+  },
+  selected_unit: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    comment: 'Stores selected price list unit information'
   }
 }, {
   tableName: 'order_items',
