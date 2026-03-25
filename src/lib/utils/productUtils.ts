@@ -16,7 +16,7 @@ export function calculateAfterDiscountPrice(
 
 export function getPriceRange(pricelist?: PriceListItem[]): string {
   if (!pricelist || pricelist.length === 0) return '—';
-  const activePrices = pricelist.filter((p) => p.isactive).map((p) => p.afterDiscountPrice);
+  const activePrices = pricelist.filter((p) => p.status === 'active').map((p) => p.afterDiscountPrice);
   if (activePrices.length === 0) return '—';
   const min = Math.min(...activePrices);
   const max = Math.max(...activePrices);
@@ -42,7 +42,7 @@ export function generateSlug(name: string): string {
 
 export function validatePriceList(pricelist: PriceListItem[]): string | null {
   for (const item of pricelist) {
-    if (!item.unitName.trim()) return 'Unit name is required for all price entries';
+    if (!item.unitSize.trim()) return 'Unit size is required for all price entries';
     if (item.unitPrice <= 0) return 'Unit price must be greater than 0';
     const discount = parseFloat(item.discount);
     if (isNaN(discount) || discount < 0) return 'Discount must be a non-negative number';

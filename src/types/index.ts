@@ -20,12 +20,12 @@ export interface LoginCredentials {
 
 export interface PriceListItem {
   unitId: number;
-  unitName: string;
+  unitSize: string;
   unitPrice: number;
   discountType: 'Percentage' | 'Fixed';
   discount: string;
   afterDiscountPrice: number;
-  isactive: boolean;
+  status: 'active' | 'inactive';
   createdon: string;
   updatedon: string;
 }

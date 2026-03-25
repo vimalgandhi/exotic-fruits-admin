@@ -8,6 +8,7 @@ import { useCategories } from '@/hooks/useCategories';
 import apiClient from '@/lib/api';
 import type { Product } from '@/types';
 import ProductForm from '@/components/products/ProductForm';
+import { AlertCircle } from 'lucide-react';
 
 interface EditProductPageProps {
   params: Promise<{ id: string }>;
@@ -17,7 +18,7 @@ export default function EditProductPage({ params }: EditProductPageProps) {
   const { id } = use(params);
   const router = useRouter();
   const { updateProduct, isLoading } = useProducts();
-  const { categories } = useCategories();
+  const { categories, error: categoriesError } = useCategories();
   const [product, setProduct] = useState<Product | null>(null);
   const [isFetching, setIsFetching] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -29,7 +30,7 @@ export default function EditProductPage({ params }: EditProductPageProps) {
       try {
         const response = await apiClient.get<{ data: any }>(`/products/${id}`);
         const apiProduct = response.data.data;
-                const transformedProduct: Product = {
+        const transformedProduct: Product = {
           ...apiProduct,
           categoryId: String(apiProduct.category_id || apiProduct.categoryId || ''),
           pricelist: typeof apiProduct.pricelist === 'string' 
@@ -99,11 +100,23 @@ export default function EditProductPage({ params }: EditProductPageProps) {
     <div className="max-w-4xl mx-auto space-y-4">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Edit Product</h1>
-        <p className="text-gray-500 mt-1">Update the details for &ldquo;{product.name}&rdquo;</p>
+        <p className="text-gray-500 mt-1">Update the details for "{product.name}"</p>
       </div>
+
+      {/* Show error if categories failed to load, but still allow form to render */}
+      {categoriesError && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex gap-3">
+          <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <h3 className="text-sm font-semibold text-yellow-900">Note</h3>
+            <p className="text-sm text-yellow-700">Could not load categories. Please refresh the page if you need to select a category.</p>
+          </div>
+        </div>
+      )}
+
       <ProductForm
         product={product}
-        categories={categories}
+        categories={categories || []}
         onSubmit={handleSubmit}
         isLoading={isLoading}
       />

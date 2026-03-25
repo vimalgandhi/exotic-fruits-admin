@@ -34,6 +34,12 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormData) => {
     try {
       await login(data);
+      const user = useAuthStore.getState().user;
+      if (user?.role !== 'admin') {
+        useAuthStore.getState().logout();
+        toast.error('Access denied. Admin role required.');
+        return;
+      }
       toast.success('Welcome back!');
       router.push('/dashboard');
     } catch (error) {

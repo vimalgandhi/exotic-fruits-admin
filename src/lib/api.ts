@@ -71,6 +71,8 @@ function getAuthHeaders(): Record<string, string> {
 
 // Helper function to handle API responses
 async function handleResponse<T>(response: Response): Promise<T> {
+  console.log(response, 'responseresponseresponse');
+  
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
     const message = (body as { message?: string }).message ?? 'API request failed';
@@ -166,7 +168,7 @@ export async function getAdminOrders(page = 1, status = '', search = '') {
 }
 
 export async function getAdminOrderById(id: string) {
-  const response = await fetch(`${API_URL}/admin/orders/${id}`, {
+  const response = await fetch(`${API_URL}/orders/${id}`, {
     headers: getAuthHeaders(),
   });
   return handleResponse(response);

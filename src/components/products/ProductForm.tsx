@@ -105,6 +105,14 @@ export default function ProductForm({
       toast.error("Please upload a product image");
       return;
     }
+
+    // Validate at least one unit size in price list
+    if (!priceList || priceList.length === 0) {
+      setSubmissionError("At least one unit size with pricing is required");
+      toast.error("Please add at least one unit size before saving");
+      return;
+    }
+
     console.log(`Received category_id: ${values.categoryId}`);
     
     const formData = new FormData();

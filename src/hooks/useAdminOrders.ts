@@ -2,13 +2,23 @@ import { useState, useCallback } from 'react';
 import { getAdminOrders, getAdminOrderById, updateOrderStatus } from '@/lib/api';
 import { logger } from '@/lib/logger';
 
-interface Order {
-  id: string;
+export interface Order {
+  id: string | number;
   orderNumber: string;
   customer: string;
   total: number;
   status: string;
   date: string;
+  // Additional fields from API response
+  user_id?: number;
+  delivery_address?: string;
+  payment_method?: string;
+  customer_email?: string;
+  customer_phone?: string;
+  tamper_detected?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  items?: any[];
 }
 
 export function useAdminOrders() {
@@ -20,6 +30,8 @@ export function useAdminOrders() {
     try {
       setLoading(true);
       const data = (await getAdminOrders(page, status, search)) as { data: Order[] };
+      console.log(data.data ?? [], 'data');
+      
       setOrders(data.data ?? []);
       setError(null);
       return data;
