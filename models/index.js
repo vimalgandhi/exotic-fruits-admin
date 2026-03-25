@@ -6,7 +6,21 @@ const Sequelize = require('sequelize');
 const process = require('process');
 const basename = path.basename(__filename);
 const env = process.env.NODE_ENV || 'development';
-const config = require(__dirname + '/../config/config.json')[env];
+const config = {
+  database: process.env.DB_NAME || 'exotic_fruits',
+  username: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  host: process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DB_PORT || '3306', 10),
+  dialect: 'mysql',
+  logging: env === 'development' ? console.log : false,
+  pool: {
+    max: 10,
+    min: 0,
+    acquire: 30000,
+    idle: 10000
+  }
+};
 const db = {};
 
 let sequelize;
