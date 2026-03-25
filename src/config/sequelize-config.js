@@ -1,5 +1,10 @@
 require('dotenv').config();
 
+const dialectConfig = {
+  dialect: 'mysql',
+  dialectModule: require('mysql2')
+};
+
 module.exports = {
   development: {
     username: process.env.DB_USER || 'root',
@@ -7,7 +12,7 @@ module.exports = {
     database: process.env.DB_NAME || 'exotic_fruits',
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '3306', 10),
-    dialect: 'mysql',
+    ...dialectConfig,
     logging: console.log
   },
   test: {
@@ -16,7 +21,7 @@ module.exports = {
     database: process.env.DB_NAME || 'exotic_fruits_test',
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '3306', 10),
-    dialect: 'mysql',
+    ...dialectConfig,
     logging: false
   },
   production: {
@@ -25,7 +30,7 @@ module.exports = {
     database: process.env.DB_NAME || 'exotic_fruits_prod',
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '3306', 10),
-    dialect: 'mysql',
+    ...dialectConfig,
     logging: false
   }
 };
