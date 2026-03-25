@@ -3,14 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Trash2, ShoppingBag, ArrowRight } from "lucide-react";
-import { useCartStore } from "@/store/cartStore";
+import { useCart } from "@/hooks/useCart";
 import { EmptyState } from "@/components/EmptyState";
 import { formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
 
 export default function CartPage() {
-  const { items, removeItem, updateQuantity, getTotal } = useCartStore();
-  const total = getTotal();
+  const { items, removeItem, updateItem, total } = useCart();
 
   if (items.length === 0) {
     return (
@@ -83,17 +82,12 @@ export default function CartPage() {
                     <td className="px-4 py-4">
                       <div className="flex items-center justify-center gap-2">
                         <button
-                          onClick={() => {
+                          onClick={async () => {
                             if (item.quantity > 1) {
-                              updateQuantity(
-                                item.product.id,
-                                item.quantity - 1,
-                              );
+                              await updateItem(item.product.id, item.quantity - 1, item.selectedUnit);
                             } else {
-                              removeItem(item.product.id);
-                              toast.info(
-                                `${item.product.name} removed from cart`,
-                              );
+                              await removeItem(item.product.id);
+                              toast.info(`${item.product.name} removed from cart`);
                             }
                           }}
                           className="rounded border border-gray-300 px-2 py-0.5 hover:bg-gray-100"
@@ -104,8 +98,8 @@ export default function CartPage() {
                           {item.quantity}
                         </span>
                         <button
-                          onClick={() =>
-                            updateQuantity(item.product.id, item.quantity + 1)
+                          onClick={async () =>
+                            await updateItem(item.product.id, item.quantity + 1, item.selectedUnit)
                           }
                           className="rounded border border-gray-300 px-2 py-0.5 hover:bg-gray-100"
                         >
@@ -123,8 +117,8 @@ export default function CartPage() {
                     </td>
                     <td className="px-4 py-4">
                       <button
-                        onClick={() => {
-                          removeItem(item.product.id);
+                        onClick={async () => {
+                          await removeItem(item.product.id);
                           toast.info(`${item.product.name} removed`);
                         }}
                         className="text-gray-400 hover:text-red-600"

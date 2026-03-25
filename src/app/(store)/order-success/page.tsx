@@ -1,13 +1,13 @@
-'use client'
+"use client";
 
-import { useSearchParams } from 'next/navigation'
-import Link from 'next/link'
-import { CheckCircle, Package, Clock } from 'lucide-react'
-import { Suspense } from 'react'
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { CheckCircle, Package, Clock } from "lucide-react";
+import { Suspense } from "react";
 
 function OrderSuccessContent() {
-  const searchParams = useSearchParams()
-  const orderId = searchParams.get('orderId') || 'ORD-XXXXXXXX'
+  const searchParams = useSearchParams();
+  const orderId = searchParams.get("orderId") || "ORD-XXXXXXXX";
 
   return (
     <div className="mx-auto max-w-lg px-4 py-16 text-center">
@@ -33,7 +33,7 @@ function OrderSuccessContent() {
           <Clock size={20} className="text-gold-500" />
           <div>
             <p className="text-sm text-gray-500">Estimated Delivery</p>
-            <p className="font-bold text-navy-600">2 – 4 Business Days</p>
+            <p className="font-bold text-navy-600">2 - 4 Business Days</p>
           </div>
         </div>
       </div>
@@ -45,7 +45,7 @@ function OrderSuccessContent() {
       <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
         <Link
           href="/orders"
-          className="btn-primary"
+          className="btn-primary justify-center flex flex-col"
         >
           View Orders
         </Link>
@@ -57,7 +57,7 @@ function OrderSuccessContent() {
         </Link>
       </div>
     </div>
-  )
+  );
 }
 
 export default function OrderSuccessPage() {
@@ -65,5 +65,5 @@ export default function OrderSuccessPage() {
     <Suspense fallback={<div className="py-16 text-center">Loading...</div>}>
       <OrderSuccessContent />
     </Suspense>
-  )
+  );
 }

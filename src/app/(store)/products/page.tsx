@@ -14,11 +14,7 @@ import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
 import { useWishlistStore } from "@/store/wishlistStore";
 import { toast } from "sonner";
-import {
-  getAllProducts,
-  toggleWishlist,
-  getCategories,
-} from "@/lib/api";
+import { getAllProducts, toggleWishlist, getCategories } from "@/lib/api";
 import type { SortOptionValue, Product } from "@/types";
 
 const ITEMS_PER_PAGE = 6;
@@ -26,6 +22,7 @@ const ITEMS_PER_PAGE = 6;
 interface PriceOption {
   unitId: number;
   unitName: string;
+  unitSize?: string;
   unitPrice: number;
   discountType: string;
   discount: string;
@@ -118,12 +115,16 @@ function ProductsContent() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
-  const [categoryIdMap, setCategoryIdMap] = useState<{ [key: string]: string }>({});
+  const [categories, setCategories] = useState<
+    Array<{ id: string; name: string }>
+  >([]);
+  const [categoryIdMap, setCategoryIdMap] = useState<{ [key: string]: string }>(
+    {},
+  );
   const [selectedPrices, setSelectedPrices] = useState<{
     [productId: string]: number;
   }>({});
-  const [addingProductId, setAddingProductId] = useState<string | null>(null);;
+  const [addingProductId, setAddingProductId] = useState<string | null>(null);
 
   // Parse URL params
   const search = searchParams.get("search") || "";
@@ -152,9 +153,9 @@ function ProductsContent() {
               name: cat.name || cat,
             }))
           : [];
-        
+
         setCategories(categoryList);
-        
+
         // Create name -> id mapping
         const idMap: { [key: string]: string } = {};
         categoryList.forEach((cat) => {
@@ -170,13 +171,13 @@ function ProductsContent() {
       setLoading(true);
       try {
         const { sortBy, order } = mapSortToApiParams(sort);
-        
+
         // Convert category names to IDs for API
         const categoryIds = selectedCategories
           .map((name) => categoryIdMap[name])
           .filter(Boolean)
           .join(",");
-        
+
         const raw = await getAllProducts(
           currentPage,
           ITEMS_PER_PAGE,
@@ -214,9 +215,7 @@ function ProductsContent() {
   // Update product wishlist status
   const updateProductWishlist = (productId: string, inWishlist: boolean) => {
     setProducts((prev) =>
-      prev.map((p) =>
-        p.id === productId ? { ...p, inWishlist } : p
-      )
+      prev.map((p) => (p.id === productId ? { ...p, inWishlist } : p)),
     );
   };
 
@@ -229,10 +228,10 @@ function ProductsContent() {
 
     try {
       const isCurrentlyInWishlist = product.inWishlist || false;
-      
+
       // Optimistic update local state
       updateProductWishlist(product.id, !isCurrentlyInWishlist);
-      
+
       // Update Zustand store optimistically
       if (isCurrentlyInWishlist) {
         useWishlistStore.setState((state) => ({
@@ -243,21 +242,28 @@ function ProductsContent() {
           id: product.id,
           name: product.name,
           slug: product.slug,
-          price: product.pricelist?.[selectedPrices[product.id] ?? 0]?.afterDiscountPrice ?? product.price ?? 0,
+          price:
+            product.pricelist?.[selectedPrices[product.id] ?? 0]
+              ?.afterDiscountPrice ??
+            product.price ??
+            0,
           image: product.image,
-          category: product.category || '',
-          stock: product.stockStatus === 'Out of Stock' ? 'Out of Stock' : 'In Stock',
-          description: product.description || '',
-          origin: product.origin || '',
-        }
+          category: product.category || "",
+          stock:
+            product.stockStatus === "Out of Stock"
+              ? "Out of Stock"
+              : "In Stock",
+          description: product.description || "",
+          origin: product.origin || "",
+        };
         useWishlistStore.setState((state) => ({
           items: [...state.items, productToAdd],
         }));
       }
-      
+
       // Call toggle endpoint
       await toggleWishlist(product.id);
-      
+
       // Show appropriate toast message
       if (isCurrentlyInWishlist) {
         toast.success(`${product.name} removed from Wishlist`);
@@ -345,12 +351,18 @@ function ProductsContent() {
 
   return (
     <div className="mx-auto max-w-7xl px-3 sm:px-4 py-4 md:py-8">
-      <h1 className="mb-4 sm:mb-6 text-2xl sm:text-3xl font-bold text-navy-600">Our Products</h1>
+      <h1 className="mb-4 sm:mb-6 text-2xl sm:text-3xl font-bold text-navy-600">
+        Our Products
+      </h1>
 
       <div className="flex flex-col gap-6 lg:gap-8 lg:flex-row">
         {/* Desktop Sidebar Filters */}
         <aside className="hidden lg:block lg:w-64 lg:shrink-0">
-          <ProductFilters variant="sidebar" categories={categories} categoryIdMap={categoryIdMap} />
+          <ProductFilters
+            variant="sidebar"
+            categories={categories}
+            categoryIdMap={categoryIdMap}
+          />
         </aside>
 
         {/* Main Content */}
@@ -361,7 +373,11 @@ function ProductsContent() {
             <div className="flex items-center gap-2">
               {/* Mobile filter button (drawer) */}
               <div className="lg:hidden flex-shrink-0">
-                <ProductFilters variant="mobile" categories={categories} categoryIdMap={categoryIdMap} />
+                <ProductFilters
+                  variant="mobile"
+                  categories={categories}
+                  categoryIdMap={categoryIdMap}
+                />
               </div>
               <div className="flex-1 min-w-0">
                 <SearchInput
@@ -379,7 +395,7 @@ function ProductsContent() {
 
           {/* Loading skeleton */}
           {loading ? (
-            <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 sm:grid-cols-3">
               {Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => (
                 <div
                   key={i}
@@ -394,7 +410,7 @@ function ProductsContent() {
             />
           ) : (
             <>
-              <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 sm:grid-cols-3 lg:grid-cols-4">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4 sm:grid-cols-3">
                 {products.map((product) => (
                   <div
                     key={product.id}
@@ -477,19 +493,19 @@ function ProductsContent() {
                                   [product.id]: parseInt(e.target.value),
                                 })
                               }
-                              className="w-full rounded border border-gray-200 px-2 py-1 text-xs font-medium focus:border-navy focus:outline-none transition-colors"
+                              className="w-full rounded border border-gray-200 py-2 text-sm font-medium focus:border-navy focus:outline-none transition-colors"
                             >
                               {product.pricelist.map((option, idx) => (
                                 <option key={option.unitId} value={idx}>
-                                  {option.unitName} - ₹
+                                  {option.unitName}
+                                  {option.unitSize} - ₹
                                   {option.afterDiscountPrice}
-                                  {option.discount &&
-                                    ` (-${option.discount}%)`}
+                                  {option.discount && ` (-${option.discount}%)`}
                                 </option>
                               ))}
                             </select>
-                            <div className="flex items-center justify-between">
-                              <span className="font-bold text-navy-600 text-xs sm:text-sm">
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="font-bold text-navy-600 text-xs sm:text-lg">
                                 ₹
                                 {
                                   product.pricelist[
@@ -497,34 +513,41 @@ function ProductsContent() {
                                   ]?.afterDiscountPrice
                                 }
                               </span>
+                              <button
+                                onClick={() => handleAddToCart(product)}
+                                disabled={
+                                  addingProductId === product.id ||
+                                  product.stockStatus === "Out of Stock" ||
+                                  product.stock === "Out of Stock"
+                                }
+                                aria-label="Add to cart"
+                                className="ml-auto inline-flex items-center justify-center rounded-md bg-gradient-to-r from-navy to-blue-600 px-2 py-2 text-xs font-medium bg-gold-700 text-white transition-all hover:shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+                              >
+                                <ShoppingCart size={16} />
+                                <span className="sr-only">Add to cart</span>
+                              </button>
                             </div>
                           </>
                         ) : (
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-navy-600 text-xs sm:text-sm">
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="font-bold text-navy-600 text-xs sm:text-lg">
                               ₹{product.price}
                             </span>
+                            <button
+                              onClick={() => handleAddToCart(product)}
+                              disabled={
+                                addingProductId === product.id ||
+                                product.stockStatus === "Out of Stock" ||
+                                product.stock === "Out of Stock"
+                              }
+                              aria-label="Add to cart"
+                              className="ml-auto inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-navy to-blue-600 px-2 py-2 text-xs font-medium text-white transition-all hover:shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+                            >
+                              <ShoppingCart size={16} />
+                              <span className="sr-only">Add to cart</span>
+                            </button>
                           </div>
                         )}
-
-                        {/* Add to Cart Button */}
-                        <button
-                          onClick={() => handleAddToCart(product)}
-                          disabled={
-                            addingProductId === product.id ||
-                            product.stockStatus === "Out of Stock" ||
-                            product.stock === "Out of Stock"
-                          }
-                          className="w-full flex items-center justify-center gap-1 rounded-lg bg-gradient-to-r from-navy to-blue-600 px-2 py-1.5 text-xs font-medium text-white transition-all hover:shadow-lg hover:from-blue-700 hover:to-blue-800 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed sm:py-2"
-                        >
-                          <ShoppingCart size={12} />
-                          <span className="hidden xs:inline">
-                            {addingProductId === product.id ? "Adding..." : "Add"}
-                          </span>
-                          <span className="xs:hidden">
-                            {addingProductId === product.id ? "..." : "+"}
-                          </span>
-                        </button>
                       </div>
                     </div>
                   </div>

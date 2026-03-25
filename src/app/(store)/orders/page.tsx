@@ -367,6 +367,12 @@ export default function OrdersPage() {
                                 item.product?.description ||
                                 item.description ||
                                 null;
+                                null;
+                              const selectedUnit = item.selected_unit || null;
+                              const unitName = selectedUnit?.unitName || 'Standard';
+                                item.product?.description ||
+                                item.description ||
+                                null;
 
                               return (
                                 <div

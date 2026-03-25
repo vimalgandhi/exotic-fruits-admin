@@ -14,6 +14,71 @@ function getAuthHeaders(): Record<string, string> {
   }
   return headers;
 }
+import { useAuthStore } from "@/store/authStore";
+
+// Helper: fetch with auth handling (refresh on 401, redirect on failure)
+async function requestWithAuth(input: RequestInfo, init?: RequestInit) {
+  const headers = init?.headers || {};
+  // Always ensure we send latest auth headers
+  const mergedInit: RequestInit = {
+    ...init,
+    headers: {
+      ...(headers as Record<string, string>),
+      ...getAuthHeaders(),
+    },
+  };
+
+  let response = await fetch(input, mergedInit);
+
+  // Try parse body for error code when not ok
+  const tryParse = async (res: Response) => {
+    try {
+      return await res.json();
+    } catch {
+      return null;
+    }
+  };
+  if (response.status === 401) {
+    try {
+      await refreshAuthToken();
+      // retry with refreshed token
+      const retryInit: RequestInit = {
+        ...init,
+        headers: {
+          ...(init?.headers as Record<string, string>),
+          ...getAuthHeaders(),
+        },
+      };
+      response = await fetch(input, retryInit);
+    } catch (err) {
+      clearAuth();
+      try {
+        useAuthStore.setState({ user: null, isAuthenticated: false });
+      } catch {}
+      if (typeof window !== "undefined") {
+        window.location.assign("/login");
+      }
+      throw err;
+    }
+  }
+
+  const data = await tryParse(response);
+  if (!response.ok) {
+    const code = data?.code || null;
+    if (response.status === 401 || code === "INVALID_TOKEN") {
+      clearAuth();
+      try {
+        useAuthStore.setState({ user: null, isAuthenticated: false });
+      } catch {}
+      if (typeof window !== "undefined") {
+        window.location.assign("/login");
+      }
+      throw new Error(data?.message || "Unauthorized");
+    }
+    throw new Error(data?.message || "Request failed");
+  }
+  return data;
+}
 
 export function isAuthenticated(): boolean {
   if (typeof window === "undefined") return false;
@@ -168,12 +233,10 @@ export async function getCategories() {
 // ==================== CART APIs (PRIVATE - Requires JWT) ====================
 
 export async function getCart() {
-  const response = await fetch(`${API_URL}/cart`, {
+  const data = await requestWithAuth(`${API_URL}/cart`, {
     headers: getAuthHeaders(),
   });
-  if (!response.ok) throw new Error("Failed to fetch cart");
-  const data = await response.json();
-  return data.data;
+  return data?.data;
 }
 
 export async function addToCart(
@@ -181,21 +244,16 @@ export async function addToCart(
   quantity: number,
   selectedUnit?: Record<string, unknown>,
 ) {
-  const response = await fetch(`${API_URL}/cart/add`, {
+  const data = await requestWithAuth(`${API_URL}/cart/add`, {
     method: "POST",
     headers: getAuthHeaders(),
-    body: JSON.stringify({ 
-      product_id: productId, 
+    body: JSON.stringify({
+      product_id: productId,
       quantity,
       selected_unit: selectedUnit,
     }),
   });
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error?.message || "Failed to add to cart");
-  }
-  const data = await response.json();
-  return data.data;
+  return data?.data;
 }
 
 export async function updateCartItem(
@@ -203,82 +261,68 @@ export async function updateCartItem(
   quantity: number,
   selectedUnit?: Record<string, unknown>,
 ) {
-  const response = await fetch(`${API_URL}/cart/${itemId}`, {
+  const data = await requestWithAuth(`${API_URL}/cart/${itemId}`, {
     method: "PUT",
     headers: getAuthHeaders(),
-    body: JSON.stringify({ 
+    body: JSON.stringify({
       quantity,
       selected_unit: selectedUnit,
     }),
   });
-  if (!response.ok) throw new Error("Failed to update cart item");
-  const data = await response.json();
-  return data.data;
+  return data?.data;
 }
 
 export async function removeFromCart(itemId: string) {
-  const response = await fetch(`${API_URL}/cart/${itemId}`, {
+  const data = await requestWithAuth(`${API_URL}/cart/${itemId}`, {
     method: "DELETE",
     headers: getAuthHeaders(),
   });
-  if (!response.ok) throw new Error("Failed to remove from cart");
-  const data = await response.json();
-  return data.data;
+  return data?.data;
 }
 
 export async function clearCart() {
-  const response = await fetch(`${API_URL}/cart/clear`, {
+  const data = await requestWithAuth(`${API_URL}/cart/clear`, {
     method: "DELETE",
     headers: getAuthHeaders(),
   });
-  if (!response.ok) throw new Error("Failed to clear cart");
-  const data = await response.json();
-  return data.data;
+  return data?.data;
 }
 
 // ==================== WISHLIST APIs (PRIVATE - Requires JWT) ====================
 
 export async function getWishlist() {
-  const response = await fetch(`${API_URL}/wishlist`, {
+  const data = await requestWithAuth(`${API_URL}/wishlist`, {
     headers: getAuthHeaders(),
   });
-  if (!response.ok) throw new Error("Failed to fetch wishlist");
-  const data = await response.json();
-  return data.data;
+  return data?.data;
 }
 
 export async function toggleWishlist(productId: string) {
-  const response = await fetch(`${API_URL}/wishlist/toggle`, {
+  const data = await requestWithAuth(`${API_URL}/wishlist/toggle`, {
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify({ productId }),
   });
-  if (!response.ok) throw new Error("Failed to toggle wishlist");
-  const data = await response.json();
-  return data.data;
+  return data?.data;
 }
 
 // ==================== ORDER APIs (PRIVATE - Requires JWT) ====================
 
 export async function getOrders(page = 1, limit = 10) {
-  const response = await fetch(
+  const data = await requestWithAuth(
     `${API_URL}/orders?page=${page}&limit=${limit}`,
     {
       headers: getAuthHeaders(),
     },
   );
-  if (!response.ok) throw new Error("Failed to fetch orders");
-  const data = await response.json();
-  return data.data;
+  return data?.data;
 }
 
 export async function getOrder(id: string) {
-  const response = await fetch(`${API_URL}/orders/${id}`, {
+  const data = await requestWithAuth(`${API_URL}/orders/${id}`, {
     headers: getAuthHeaders(),
   });
-  if (!response.ok) throw new Error("Failed to fetch order");
-  const data = await response.json();
-  return data.data;
+  return data?.data;
 }
 
 export async function createOrder(
@@ -286,84 +330,70 @@ export async function createOrder(
   deliveryAddress: string,
   clientTotal: number,
 ) {
-  const response = await fetch(`${API_URL}/orders`, {
+  const data = await requestWithAuth(`${API_URL}/orders`, {
     method: "POST",
     headers: getAuthHeaders(),
-    body: JSON.stringify({ 
+    body: JSON.stringify({
       items, // Send frontend items (backend will validate prices against DB)
       delivery_address: deliveryAddress,
       clientTotal, // Send frontend-calculated total for tamper detection
     }),
   });
-  if (!response.ok) throw new Error("Failed to create order");
-  const data = await response.json();
-  return data.data;
+  return data?.data;
 }
 
 export async function updateOrderStatus(id: string, status: string) {
-  const response = await fetch(`${API_URL}/orders/${id}`, {
+  const data = await requestWithAuth(`${API_URL}/orders/${id}`, {
     method: "PUT",
     headers: getAuthHeaders(),
     body: JSON.stringify({ status }),
   });
-  if (!response.ok) throw new Error("Failed to update order");
-  const data = await response.json();
-  return data.data;
+  return data?.data;
 }
 
 // ==================== PAYMENT APIs (PRIVATE - Requires JWT) ====================
 
 export async function createPaymentOrder(orderId: string, amount: number) {
-  const response = await fetch(`${API_URL}/payments/create-order`, {
+  const data = await requestWithAuth(`${API_URL}/payments/create-order`, {
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify({ orderId, amount }),
   });
-  if (!response.ok) throw new Error("Failed to create payment order");
-  const data = await response.json();
-  return data.data;
+  return data?.data;
 }
 
 export async function verifyPayment(paymentData: Record<string, unknown>) {
-  const response = await fetch(`${API_URL}/payments/verify-payment`, {
+  const data = await requestWithAuth(`${API_URL}/payments/verify-payment`, {
     method: "POST",
     headers: getAuthHeaders(),
     body: JSON.stringify(paymentData),
   });
-  if (!response.ok) throw new Error("Failed to verify payment");
-  const data = await response.json();
-  return data.data;
+  return data?.data;
 }
 
 // ==================== USER APIs (PRIVATE - Requires JWT) ====================
 
 export async function getUserProfile() {
-  const response = await fetch(`${API_URL}/users/profile`, {
+  const data = await requestWithAuth(`${API_URL}/users/profile`, {
     headers: getAuthHeaders(),
   });
-  if (!response.ok) throw new Error("Failed to fetch profile");
-  const data = await response.json();
-  return data.data;
+  return data?.data;
 }
 
 export async function updateUserProfile(profileData: Record<string, unknown>) {
-  const response = await fetch(`${API_URL}/users/profile`, {
+  const data = await requestWithAuth(`${API_URL}/users/profile`, {
     method: "PUT",
     headers: getAuthHeaders(),
     body: JSON.stringify(profileData),
   });
-  if (!response.ok) throw new Error("Failed to update profile");
-  const data = await response.json();
-  return data.data;
+  return data?.data;
 }
 
 export async function changePassword(oldPassword: string, newPassword: string) {
-  const response = await fetch(`${API_URL}/users/password`, {
+  const data = await requestWithAuth(`${API_URL}/users/password`, {
     method: "PUT",
     headers: getAuthHeaders(),
     body: JSON.stringify({ oldPassword, newPassword }),
   });
-  if (!response.ok) throw new Error("Failed to change password");
-  const data = await response.json();
-  return data.data;
+  return data?.data;
 }

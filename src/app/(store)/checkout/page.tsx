@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useAuth } from '@/hooks/useAuth'
-import { useCartStore } from '@/store/cartStore'
+import { useCart } from '@/hooks/useCart'
 import { useCheckoutStore } from '@/store/checkoutStore'
 import { formatCurrency } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -62,9 +62,8 @@ type CheckoutForm = z.infer<typeof checkoutSchema>
 export default function CheckoutPage() {
   const { isAuthenticated, user } = useAuth()
   const router = useRouter()
-  const { items, getTotal, clearCart } = useCartStore()
+  const { items, clearCart, total } = useCart()
   const { setOrderData, setOrderId, setPaymentStatus } = useCheckoutStore()
-  const total = getTotal()
   const [isProcessing, setIsProcessing] = useState(false)
   const [isRazorpayReady, setIsRazorpayReady] = useState(false)
 
@@ -242,13 +241,15 @@ export default function CheckoutPage() {
               console.error('❌ Payment signature invalid:', verifyData)
               throw new Error('Payment signature verification failed')
             }
-            const orderId = verifyData.orderId
+            console.log(verifyData, 'verifyData');
+            
+            const orderId = verifyData.orderId || verifyData.razorpay_order_id || `ORD-${Date.now()}`
 
             setOrderData(data)
             setOrderId(orderId)
             setPaymentStatus('PAID')
             
-            clearCart()
+            await clearCart()
             
             toast.success('Payment successful! Order placed!')
             
@@ -341,7 +342,7 @@ export default function CheckoutPage() {
           setOrderId(orderId)
           setPaymentStatus('PENDING')
           
-          clearCart()
+          await clearCart()
           
           toast.success('Order placed successfully!')
           router.push(`/order-success?orderId=${orderId}`)
