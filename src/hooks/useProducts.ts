@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { Product } from '@/types';
-import { MOCK_PRODUCTS } from '@/lib/mock-data';
 import apiClient from '@/lib/api';
 import { logger } from '@/lib/logger';
 
@@ -23,7 +22,7 @@ export function useProducts() {
     } catch (err) {
       logger.warn('useProducts/fetchProducts', 'Failed to fetch products — falling back to mock data', err);
       setError('Failed to fetch products');
-      setProducts(MOCK_PRODUCTS);
+      setProducts([]);
     } finally {
       setIsLoading(false);
     }

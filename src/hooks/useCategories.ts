@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { Category } from '@/types/category';
-import { MOCK_CATEGORIES } from '@/lib/mock-data';
 import apiClient from '@/lib/api';
 import { logger } from '@/lib/logger';
 
@@ -21,9 +20,9 @@ export function useCategories() {
       const response = await apiClient.get<{ data: Category[] }>('/categories');
       setCategories(response.data.data ?? []);
     } catch (err) {
-      logger.warn('useCategories/fetchCategories', 'Failed to fetch categories — falling back to mock data', err);
+      logger.error('useCategories/fetchCategories', 'Failed to fetch categories', err);
       setError('Failed to fetch categories');
-      setCategories(MOCK_CATEGORIES);
+      setCategories([]);
     } finally {
       setIsLoading(false);
     }
