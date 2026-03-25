@@ -4,77 +4,52 @@
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.addColumn('products', 'originCountry', {
-      type: Sequelize.STRING(100),
-      allowNull: true
-    });
-    await queryInterface.addColumn('products', 'foodType', {
-      type: Sequelize.STRING(50),
-      allowNull: true
-    });
-    await queryInterface.addColumn('products', 'stockStatus', {
-      type: Sequelize.STRING(50),
-      allowNull: true
-    });
-    await queryInterface.addColumn('products', 'status', {
-      type: Sequelize.ENUM('Active', 'Inactive'),
-      allowNull: false,
-      defaultValue: 'Active'
-    });
-    await queryInterface.addColumn('products', 'featured', {
-      type: Sequelize.BOOLEAN,
-      allowNull: false,
-      defaultValue: false
-    });
-    await queryInterface.addColumn('products', 'pricelist', {
-      type: Sequelize.TEXT,
-      allowNull: true
-    });
-    await queryInterface.addColumn('products', 'seoMetaTitle', {
-      type: Sequelize.STRING(255),
-      allowNull: true
-    });
-    await queryInterface.addColumn('products', 'seoMetaDescription', {
-      type: Sequelize.STRING(255),
-      allowNull: true
-    });
-    await queryInterface.addColumn('products', 'seoAlt', {
-      type: Sequelize.STRING(255),
-      allowNull: true
-    });
-    await queryInterface.addColumn('products', 'seoIndex', {
-      type: Sequelize.BOOLEAN,
-      allowNull: false,
-      defaultValue: true
-    });
-    await queryInterface.addColumn('products', 'seoFollow', {
-      type: Sequelize.BOOLEAN,
-      allowNull: false,
-      defaultValue: true
-    });
-    await queryInterface.addColumn('products', 'seoCanonical', {
-      type: Sequelize.STRING(255),
-      allowNull: true
-    });
-    await queryInterface.addColumn('products', 'seoSchemaJson', {
-      type: Sequelize.TEXT,
-      allowNull: true
-    });
+    const transaction = await queryInterface.sequelize.transaction();
+    try {
+      const table = await queryInterface.describeTable('products', { transaction });
+      const columnsToAdd = [
+        { name: 'originCountry', def: { type: Sequelize.STRING(100), allowNull: true } },
+        { name: 'foodType', def: { type: Sequelize.STRING(50), allowNull: true } },
+        { name: 'stockStatus', def: { type: Sequelize.STRING(50), allowNull: true } },
+        { name: 'status', def: { type: Sequelize.ENUM('Active', 'Inactive'), allowNull: false, defaultValue: 'Active' } },
+        { name: 'featured', def: { type: Sequelize.BOOLEAN, allowNull: false, defaultValue: false } },
+        { name: 'pricelist', def: { type: Sequelize.TEXT, allowNull: true } },
+        { name: 'seoMetaTitle', def: { type: Sequelize.STRING(255), allowNull: true } },
+        { name: 'seoMetaDescription', def: { type: Sequelize.STRING(255), allowNull: true } },
+        { name: 'seoAlt', def: { type: Sequelize.STRING(255), allowNull: true } },
+        { name: 'seoIndex', def: { type: Sequelize.BOOLEAN, allowNull: false, defaultValue: true } },
+        { name: 'seoFollow', def: { type: Sequelize.BOOLEAN, allowNull: false, defaultValue: true } },
+        { name: 'seoCanonical', def: { type: Sequelize.STRING(255), allowNull: true } },
+        { name: 'seoSchemaJson', def: { type: Sequelize.TEXT, allowNull: true } }
+      ];
+
+      for (const col of columnsToAdd) {
+        if (!table[col.name]) {
+          await queryInterface.addColumn('products', col.name, col.def, { transaction });
+        }
+      }
+      await transaction.commit();
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
   },
 
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.removeColumn('products', 'originCountry');
-    await queryInterface.removeColumn('products', 'foodType');
-    await queryInterface.removeColumn('products', 'stockStatus');
-    await queryInterface.removeColumn('products', 'status');
-    await queryInterface.removeColumn('products', 'featured');
-    await queryInterface.removeColumn('products', 'pricelist');
-    await queryInterface.removeColumn('products', 'seoMetaTitle');
-    await queryInterface.removeColumn('products', 'seoMetaDescription');
-    await queryInterface.removeColumn('products', 'seoAlt');
-    await queryInterface.removeColumn('products', 'seoIndex');
-    await queryInterface.removeColumn('products', 'seoFollow');
-    await queryInterface.removeColumn('products', 'seoCanonical');
-    await queryInterface.removeColumn('products', 'seoSchemaJson');
+    const transaction = await queryInterface.sequelize.transaction();
+    try {
+      const table = await queryInterface.describeTable('products', { transaction });
+      const columnsToRemove = ['originCountry', 'foodType', 'stockStatus', 'status', 'featured', 'pricelist', 'seoMetaTitle', 'seoMetaDescription', 'seoAlt', 'seoIndex', 'seoFollow', 'seoCanonical', 'seoSchemaJson'];
+      
+      for (const col of columnsToRemove) {
+        if (table[col]) {
+          await queryInterface.removeColumn('products', col, { transaction });
+        }
+      }
+      await transaction.commit();
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
   }
 };
