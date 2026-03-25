@@ -255,8 +255,6 @@ export async function toggleWishlist(productId: string) {
   });
   if (!response.ok) throw new Error("Failed to toggle wishlist");
   const data = await response.json();
-  console.log(data, "res..........");
-
   return data.data;
 }
 

@@ -152,12 +152,6 @@ export default function ProductDetailPage({
     try {
       setIsAdding(true)
       const selectedPrice = product.pricelist?.[selectedPriceIndex]
-      
-      // Debug: log the selected price
-      console.log('Selected price:', selectedPrice)
-      console.log('Product pricelist:', product.pricelist)
-      console.log('Selected price index:', selectedPriceIndex)
-
       await addItem(
         {
           id: product.id,

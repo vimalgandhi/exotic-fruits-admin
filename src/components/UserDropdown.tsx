@@ -56,7 +56,7 @@ export function UserDropdown() {
         onClick={() => setIsOpen(!isOpen)}
         className="flex w-full sm:w-auto items-center justify-between sm:justify-center gap-2 rounded-full border border-navy-700 sm:border-gray-200 bg-navy-700 sm:bg-white px-2 sm:px-3 py-1.5 sm:py-2 hover:bg-navy-600 sm:hover:bg-gray-50 transition-colors"
       >
-        <div className="flex h-6 sm:h-7 w-6 sm:w-7 items-center justify-center rounded-full bg-gold-500 text-xs sm:text-sm font-medium text-navy-800">
+        <div className="flex h-6 sm:h-7 w-6 sm:w-7 items-center justify-center rounded-full bg-gold-500 text-xs sm:text-sm font-medium text-white">
           {user?.name?.charAt(0).toUpperCase()}
         </div>
         <span className="text-xs sm:text-sm font-medium text-white sm:text-navy-600">

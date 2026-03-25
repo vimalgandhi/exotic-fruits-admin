@@ -44,15 +44,6 @@ export async function POST(request: NextRequest) {
       total,
     } = (await request.json()) as VerifyRequest
 
-    console.log('🔵 Verify payment request:', {
-      razorpay_order_id,
-      razorpay_payment_id,
-      razorpay_signature: razorpay_signature?.substring(0, 10) + '...',
-      hasCustomerDetails: !!customerDetails,
-      hasOrderItems: !!orderItems,
-      total,
-    })
-
     // Validate input
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       console.error('❌ Missing payment details', {
@@ -81,11 +72,6 @@ export async function POST(request: NextRequest) {
       .update(message)
       .digest('hex')
 
-    console.log('🔵 Signature verification:', {
-      expected: expectedSignature?.substring(0, 10) + '...',
-      received: razorpay_signature?.substring(0, 10) + '...',
-    })
-
     // Use timingSafeEqual to prevent timing attacks
     let isValidSignature = false
     try {
@@ -99,7 +85,6 @@ export async function POST(request: NextRequest) {
       isValidSignature = false
     }
 
-    console.log('🔵 Signature match:', isValidSignature)
 
     if (!isValidSignature) {
       console.error('❌ Invalid payment signature')
@@ -113,27 +98,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Payment is verified successfully
-    console.log('✅ Payment verified successfully')
 
     // Create order if customer details and order items are provided
     if (customerDetails && orderItems && total) {
-      console.log('📍 Creating order after payment verification...')
       
       try {
         const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
-        console.log('🔵 Backend URL:', backendUrl)
-        console.log('🔵 Calling backend to create order...')
-        console.log('📦 Order creation request:')
-        console.log('  - Customer:', `${customerDetails?.firstName} ${customerDetails?.lastName}`)
-        console.log('  - Email:', customerDetails?.email)
-        console.log('  - Phone:', customerDetails?.phone)
-        console.log('  - Delivery Address:', customerDetails?.deliveryAddress)
-        console.log('  - Items count:', orderItems?.length)
-        console.log('  - Order items:', JSON.stringify(orderItems?.slice(0, 2), null, 2), orderItems?.length! > 2 ? `... (${orderItems?.length} total)` : '')
-        console.log('  - Total:', total)
-        console.log('  - Payment Method: card')
-        console.log('  - Payment Status: PAID')
-
         const createOrderRes = await fetch(`${backendUrl}/orders/payment/create`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -149,24 +119,15 @@ export async function POST(request: NextRequest) {
           }),
         })
 
-        console.log('🔵 Backend response status:', createOrderRes.status)
-        console.log('🔵 Backend response headers:', {
-          contentType: createOrderRes.headers.get('content-type'),
-          status: createOrderRes.status,
-          statusText: createOrderRes.statusText,
-        })
-
         let orderData
         try {
           const responseText = await createOrderRes.text()
-          console.log('📝 Backend raw response:', responseText)
           orderData = responseText ? JSON.parse(responseText) : {}
         } catch (parseError) {
           console.error('❌ Failed to parse backend response:', parseError)
           orderData = { error: 'Invalid response format' }
         }
 
-        console.log('✅ Backend response received:', JSON.stringify(orderData, null, 2))
 
         if (!createOrderRes.ok) {
           console.error('❌ Backend order creation failed')
@@ -200,8 +161,6 @@ export async function POST(request: NextRequest) {
 
         const orderId = orderData.orderId || orderData._id || orderData.id
 
-        console.log('✅ Order created successfully:', orderId)
-        console.log('✅ Full order data from backend:', JSON.stringify(orderData, null, 2))
         return NextResponse.json(
           {
             verified: true,

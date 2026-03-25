@@ -29,16 +29,6 @@ export const useCartStore = create<CartState>((set, get) => ({
         : (item.unitPrice || item.product?.price || 0)
       const totalPrice = unitPrice * item.quantity
       
-      console.log(`Cart Item ${idx}:`, {
-        product: item.product?.name,
-        quantity: item.quantity,
-        selectedUnitId: item.selectedUnit?.unitId,
-        selectedUnitName: item.selectedUnit?.unitName,
-        selectedUnitPrice: item.selectedUnit?.afterDiscountPrice,
-        calculatedUnitPrice: unitPrice,
-        totalPrice: totalPrice,
-      })
-      
       return {
         ...item,
         unitPrice,

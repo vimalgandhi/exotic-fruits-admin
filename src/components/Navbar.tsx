@@ -78,7 +78,7 @@ export function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-xs sm:text-sm font-medium text-gray-700 hover:text-gold transition-colors whitespace-nowrap"
+                className="text-sm sm:text-base font-bold text-gray-700 hover:text-gold transition-colors whitespace-nowrap"
               >
                 {link.label}
               </Link>
@@ -95,7 +95,7 @@ export function Navbar() {
             >
               <Heart size={22} className="text-navy" />
               {wishlistCount > 0 && (
-                <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-gold text-xs font-bold text-navy-700">
+                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gold-500 text-xs font-bold text-white">
                   {wishlistCount}
                 </span>
               )}
@@ -112,7 +112,7 @@ export function Navbar() {
                 className="text-navy"
               />
               {itemCount > 0 && (
-                <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-gold text-xs font-bold text-navy-700">
+                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full !bg-gold-500 text-xs font-bold text-white">
                   {itemCount}
                 </span>
               )}

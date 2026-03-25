@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Heart } from "lucide-react";
+import { Heart, ShoppingCart } from "lucide-react";
 import { getAllProducts, toggleWishlist, isAuthenticated } from "@/lib/api";
 import { useWishlistStore } from "@/store/wishlistStore";
+import { useCart } from "@/hooks/useCart";
 import { toast } from "sonner";
 import type { Product } from "@/types";
 
@@ -60,6 +61,8 @@ function normalizeFeaturedProduct(p: any): FeaturedProduct {
 }
 
 export default function HomePage() {
+  const { addItem, items } = useCart();
+  const cartCount = items.reduce((count, item) => count + item.quantity, 0);
   const [featuredProducts, setFeaturedProducts] = useState<FeaturedProduct[]>(
     [],
   );
@@ -97,9 +100,7 @@ export default function HomePage() {
   // Update product wishlist status
   const updateProductWishlist = (productId: string, inWishlist: boolean) => {
     setFeaturedProducts((prev) =>
-      prev.map((p) =>
-        p.id === productId ? { ...p, inWishlist } : p
-      )
+      prev.map((p) => (p.id === productId ? { ...p, inWishlist } : p)),
     );
   };
 
@@ -112,10 +113,8 @@ export default function HomePage() {
 
     try {
       const isCurrentlyInWishlist = product.inWishlist || false;
-      
       // Optimistic update local state
       updateProductWishlist(product.id, !isCurrentlyInWishlist);
-      
       // Update Zustand store optimistically
       if (isCurrentlyInWishlist) {
         useWishlistStore.setState((state) => ({
@@ -128,19 +127,23 @@ export default function HomePage() {
           slug: product.slug,
           price: product.price ?? 0,
           image: product.image,
-          category: typeof product.category === 'string' ? product.category : (product.category?.name || ''),
-          stock: product.stockStatus === 'Out of Stock' ? 'Out of Stock' : 'In Stock',
-          description: '',
-          origin: '',
-        }
+          category:
+            typeof product.category === "string"
+              ? product.category
+              : product.category?.name || "",
+          stock:
+            product.stockStatus === "Out of Stock"
+              ? "Out of Stock"
+              : "In Stock",
+          description: "",
+          origin: "",
+        };
         useWishlistStore.setState((state) => ({
           items: [...state.items, productToAdd],
         }));
       }
-      
       // Call toggle endpoint
       await toggleWishlist(product.id);
-      
       // Show appropriate toast message
       if (isCurrentlyInWishlist) {
         toast.success(`${product.name} removed from Wishlist`);
@@ -157,7 +160,6 @@ export default function HomePage() {
 
   return (
     <div>
-      {/* Hero Section */}
       <section className="bg-gradient-to-br from-navy-600 to-navy-700 py-20 text-white">
         <div className="mx-auto max-w-7xl px-4 text-center">
           <h1 className="text-4xl font-bold leading-tight md:text-6xl text-gray-200">
@@ -174,13 +176,15 @@ export default function HomePage() {
       <section className="py-16">
         <div className="mx-auto max-w-7xl px-4">
           <div className="mb-10 text-center">
-            <h2 className="text-3xl font-bold text-navy-600">Featured Products</h2>
+            <h2 className="text-3xl font-bold text-navy-600">
+              Featured Products
+            </h2>
             <p className="mt-3 text-gray-500">
               Explore our handpicked selection of exotic fruits
             </p>
           </div>
           {loadingProducts ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div
                   key={i}
@@ -222,7 +226,11 @@ export default function HomePage() {
                       <button
                         onClick={() => handleWishlistToggle(product)}
                         className="absolute right-2 top-2 rounded-full bg-white p-1.5 shadow-lg transition-all duration-300 hover:scale-110 active:scale-95 hover:shadow-xl"
-                        aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
+                        aria-label={
+                          inWishlist
+                            ? "Remove from wishlist"
+                            : "Add to wishlist"
+                        }
                         disabled={loadingProducts}
                       >
                         <Heart
@@ -258,7 +266,8 @@ export default function HomePage() {
                             value={selectedUnits[product.id]?.unitId || ""}
                             onChange={(e) => {
                               const selectedItem = product.pricelist?.find(
-                                (item) => item.unitId === Number(e.target.value),
+                                (item) =>
+                                  item.unitId === Number(e.target.value),
                               );
 
                               if (selectedItem) {
@@ -269,18 +278,70 @@ export default function HomePage() {
                               }
                             }}
                           >
-                            {product.pricelist && product.pricelist.map((item) => (
-                              <option key={item.unitId} value={item.unitId}>
-                                {item.unitName} - ₹{item.afterDiscountPrice}
-                              </option>
-                            ))}
+                            {product.pricelist &&
+                              product.pricelist.map((item) => (
+                                <option key={item.unitId} value={item.unitId}>
+                                  {item.unitName} - ₹{item.afterDiscountPrice}
+                                </option>
+                              ))}
                           </select>
                         )}
-                        
-                        {/* Price Display */}
-                        <p className="font-bold text-navy-600 text-sm sm:text-base">
-                          ₹{selected ? selected.afterDiscountPrice : product.price}
-                        </p>
+
+                        {/* Price Display and Add to Cart */}
+                        <div className="flex items-center justify-between gap-2 mt-2">
+                          <p className="font-bold text-navy-600 text-sm sm:text-base">
+                            ₹
+                            {selected
+                              ? selected.afterDiscountPrice
+                              : product.price}
+                          </p>
+                          <button
+                            className="p-2 rounded bg-gold-500 text-white hover:bg-gold-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center"
+                            onClick={() =>
+                              addItem(
+                                {
+                                  id: product.id,
+                                  name: product.name,
+                                  slug: product.slug,
+                                  price: product.price ?? 0,
+                                  image: product.image,
+                                  category:
+                                    typeof product.category === "string"
+                                      ? product.category
+                                      : product.category?.name || "",
+                                  stock:
+                                    product.stockStatus === "Out of Stock"
+                                      ? "Out of Stock"
+                                      : "In Stock",
+                                  description: "",
+                                  origin: "",
+                                  originCountry: product.originCountry,
+                                  pricelist: product.pricelist?.map((item) => ({
+                                    unitId: String(item.unitId),
+                                    unitName: item.unitName,
+                                    unitValue: 1,
+                                    unitPrice: item.unitPrice,
+                                    discountType: item.discountType as
+                                      | "Percentage"
+                                      | "Fixed",
+                                    discount: Number(item.discount),
+                                    afterDiscountPrice: item.afterDiscountPrice,
+                                    isactive: true,
+                                    createdon: "",
+                                    updatedon: "",
+                                  })),
+                                },
+                                1,
+                                selected as any, // Cast to PriceListItem, since types differ but structure is compatible for addItem
+                              )
+                            }
+                            disabled={product.stockStatus === "Out of Stock"}
+                            aria-label="Add to Cart"
+                            title="Add to Cart"
+                          >
+                            <ShoppingCart size={18} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>

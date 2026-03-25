@@ -555,7 +555,7 @@ export default function ProductsPage() {
         <div className="mx-auto max-w-7xl px-4 py-8">
           <div className="animate-pulse space-y-4">
             <div className="h-8 w-48 rounded bg-gray-200" />
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               {Array.from({ length: 10 }).map((_, i) => (
                 <div key={i} className="aspect-square rounded-lg bg-gray-200" />
               ))}

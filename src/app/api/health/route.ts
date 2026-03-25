@@ -3,16 +3,10 @@ import { NextRequest, NextResponse } from 'next/server'
 export const runtime = 'nodejs'
 
 export async function GET() {
-  console.log('🏥 Health check requested')
   
   const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
   
   try {
-    console.log('✅ Frontend is running')
-    
-    // Test backend connectivity
-    console.log('🔵 Testing backend connectivity to:', backendUrl)
-    
     try {
       const controller = new AbortController()
       const timeout = setTimeout(() => controller.abort(), 5000)
@@ -24,8 +18,6 @@ export async function GET() {
       })
       
       clearTimeout(timeout)
-      
-      console.log('🔵 Backend responded with status:', backendHealthRes.status)
       const backendHealth = await backendHealthRes.json()
       
       return NextResponse.json(

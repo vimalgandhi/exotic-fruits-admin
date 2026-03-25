@@ -25,17 +25,14 @@ declare global {
 function loadRazorpayScript(): Promise<boolean> {
   return new Promise((resolve) => {
     if (window.Razorpay) {
-      console.log('✅ Razorpay already loaded in window')
       resolve(true)
       return
     }
 
-    console.log('🔵 Loading Razorpay script...')
     const script = document.createElement('script')
     script.src = 'https://checkout.razorpay.com/v1/checkout.js'
     script.async = true
     script.onload = () => {
-      console.log('✅ Razorpay script loaded successfully')
       resolve(true)
     }
     script.onerror = () => {
@@ -115,9 +112,7 @@ export default function CheckoutPage() {
   const handleRazorpayPayment = async (data: CheckoutForm) => {
     try {
       // Ensure Razorpay script is loaded
-      console.log('🔵 Checking Razorpay availability...')
       if (!window.Razorpay) {
-        console.log('⚠️ Razorpay not loaded in window, attempting to load...')
         const loaded = await loadRazorpayScript()
         if (!loaded) {
           throw new Error('Failed to load Razorpay. Please check your internet connection and try again.')
@@ -128,10 +123,6 @@ export default function CheckoutPage() {
         console.error('❌ Razorpay key not configured in environment')
         throw new Error('Payment gateway key is not configured. Please contact support.')
       }
-
-      console.log('✅ Razorpay is ready')
-      console.log('📍 [RAZORPAY] Payment Initiated:');
-      
       const deliveryAddress = `${data.firstName} ${data.lastName}, ${data.address}, ${data.city}, ${data.state} - ${data.pincode}`
       const orderItems = items.map((item) => ({
         productId: item.product.id,
@@ -142,12 +133,9 @@ export default function CheckoutPage() {
         selectedUnit: item.selectedUnit,
       }))
 
-      console.log('📦 Cart Items Count:', items.length);
-      console.log('💰 Total Amount:', total);
 
       // Razorpay expects amount in PAISE (not rupees)
       const amountInPaise = Math.round(total * 100)
-      console.log('💱 Amount in paise:', amountInPaise);
 
       // Generate a temporary reference ID for this payment attempt
       const paymentReference = `PAY-${Date.now()}`
@@ -156,8 +144,6 @@ export default function CheckoutPage() {
       const normalizedPhone = data.phone.replace(/\D/g, '')
       
       // Create Razorpay order (payment gateway order, not business order)
-      console.log('🔵 Creating Razorpay order...')
-      console.log('📱 Normalized phone:', normalizedPhone, 'from:', data.phone)
       const res = await fetch('/api/razorpay/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -171,8 +157,6 @@ export default function CheckoutPage() {
       })
 
       const responseData = await res.json()
-      console.log('📞 Razorpay API Response Status:', res.status)
-      console.log('📞 Razorpay API Response Data:', JSON.stringify(responseData, null, 2))
 
       if (!res.ok) {
         console.error('❌ Razorpay API Error:', responseData)
@@ -180,7 +164,6 @@ export default function CheckoutPage() {
         throw new Error(`Failed to initiate payment: ${errorMsg}`)
       }
 
-      console.log('✅ Razorpay order created successfully')
       
       const razorpayOrderId = responseData.orderId || responseData.order_id || responseData.id
       if (!razorpayOrderId) {
@@ -188,8 +171,6 @@ export default function CheckoutPage() {
         throw new Error('Payment gateway returned invalid response. No order ID found.')
       }
       
-      console.log('✅ Razorpay Order ID:', razorpayOrderId)
-      console.log('✅ Using Key ID:', responseData.keyId?.substring(0, 15) + '...')
 
       // Use key from response or fallback to env
       const razorpayKey = responseData.keyId || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID
@@ -221,14 +202,6 @@ export default function CheckoutPage() {
         }) => {
           setIsProcessing(true)
           try {
-            console.log('✅ Payment completed by Razorpay');
-            console.log('📦 Payment Response:', {
-              paymentId: response.razorpay_payment_id?.substring(0, 10) + '...',
-              orderId: response.razorpay_order_id,
-              signatureFirst10: response.razorpay_signature?.substring(0, 10) + '...',
-            });
-            console.log('🔐 Verifying payment signature...');
-
             const orderItems = items.map((item) => ({
               productId: item.product.id,
               quantity: item.quantity,
@@ -237,13 +210,6 @@ export default function CheckoutPage() {
                 : item.product.price,
               selectedUnit: item.selectedUnit,
             }))
-
-            console.log('📦 Preparing to verify payment with:')
-            console.log('  - Payment ID:', response.razorpay_payment_id?.substring(0, 15) + '...')
-            console.log('  - Order ID:', response.razorpay_order_id)
-            console.log('  - Items count:', orderItems.length)
-            console.log('  - Total:', total)
-            console.log('  - Customer email:', data.email)
 
             // Verify payment AND create order in backend
             const verifyRes = await fetch('/api/razorpay/verify-payment', {
@@ -265,16 +231,7 @@ export default function CheckoutPage() {
                 total,
               }),
             })
-
-            console.log('📡 Verify API response status:', verifyRes.status)
             const verifyData = await verifyRes.json()
-            console.log('✅ Verification response received')
-            console.log('📍 Verification response:', {
-              verified: verifyData.verified,
-              orderId: verifyData.orderId,
-              message: verifyData.message,
-              orderCreationStatus: verifyData.orderCreationStatus,
-            })
 
             if (!verifyRes.ok) {
               console.error('❌ Verification API error:', verifyData)
@@ -285,23 +242,16 @@ export default function CheckoutPage() {
               console.error('❌ Payment signature invalid:', verifyData)
               throw new Error('Payment signature verification failed')
             }
-            console.log('✅ Payment verified successfully')
             const orderId = verifyData.orderId
-            console.log('💾 Saving order to checkout store...')
-            console.log('  - Order ID:', orderId)
-            console.log('  - Payment Status:', 'PAID')
 
             setOrderData(data)
             setOrderId(orderId)
             setPaymentStatus('PAID')
             
-            console.log('🗑️  Clearing cart...')
             clearCart()
-            console.log('✅ Cart cleared successfully')
             
             toast.success('Payment successful! Order placed!')
             
-            console.log('🔀 Redirecting to order-success page...')
             router.push(`/order-success?orderId=${orderId}`)
           } catch (error) {
             console.error('❌ Verification error:', error)
@@ -320,17 +270,7 @@ export default function CheckoutPage() {
         },
       }
 
-      console.log('🔵 Instantiating Razorpay with options...')
-      console.log('Options:', JSON.stringify({
-        key: razorpayKey,
-        amount: responseData.amount,
-        currency: responseData.currency,
-        order_id: razorpayOrderId,
-        name: 'Exotic Fruits',
-      }, null, 2))
-
       const rzp = new window.Razorpay(options)
-      console.log('✅ Razorpay instance created, opening checkout...')
       rzp.open()
       
     } catch (error) {
@@ -357,8 +297,6 @@ export default function CheckoutPage() {
         await handleRazorpayPayment(data)
       } else {
         // For COD and UPI, create order directly
-        console.log('📍 [COD/UPI] Order Submission:');
-        
         const deliveryAddress = `${data.firstName} ${data.lastName}, ${data.address}, ${data.city}, ${data.state} - ${data.pincode}`
         const orderItems = items.map((item) => ({
           productId: item.product.id,
@@ -369,15 +307,8 @@ export default function CheckoutPage() {
           selectedUnit: item.selectedUnit,
         }))
 
-        console.log('📦 Cart Items Count:', items.length);
-        console.log('📦 Order Items:', JSON.stringify(orderItems, null, 2));
-        console.log('💰 Total Amount:', total);
-        console.log('💳 Payment Method:', data.paymentMethod);
-        console.log('📧 Customer Email:', data.email)
-
         // Call order creation API with COD/UPI details
         try {
-          console.log('📡 Calling /api/orders/create endpoint...')
           const res = await fetch('/api/orders/create', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -397,30 +328,22 @@ export default function CheckoutPage() {
             }),
           })
 
-          console.log('📡 Create order response status:', res.status)
           const orderData = await res.json()
-          console.log('✅ Backend response received:', JSON.stringify(orderData, null, 2));
 
           if (!res.ok) {
             console.error('❌ Backend error:', orderData)
             throw new Error(orderData.message || 'Failed to create order')
           }
 
-          console.log('✅ Order created successfully')
           const orderId = orderData.orderId || orderData._id
           
-          console.log('💾 Saving order to checkout store...')
-          console.log('  - Order ID:', orderId)
           setOrderData(data)
           setOrderId(orderId)
           setPaymentStatus('PENDING')
           
-          console.log('🗑️  Clearing cart...')
           clearCart()
-          console.log('✅ Cart cleared successfully')
           
           toast.success('Order placed successfully!')
-          console.log('🔀 Redirecting to order-success page...')
           router.push(`/order-success?orderId=${orderId}`)
         } catch (error) {
           console.error('❌ Order creation failed:', error);

@@ -42,15 +42,6 @@ export async function POST(request: NextRequest) {
       paymentStatus = 'PENDING',
     } = body
 
-    console.log('📍 Creating order via API')
-    console.log('🔍 Request body keys:', Object.keys(body))
-    console.log('📦 Order Details:')
-    console.log('  - Payment Method:', paymentMethod)
-    console.log('  - Payment Status:', paymentStatus)
-    console.log('  - Total:', total)
-    console.log('  - Items count:', orderItems?.length)
-    console.log('  - Customer:', customerDetails ? `${customerDetails.firstName} ${customerDetails.lastName}` : 'N/A')
-
     // Validate input
     if (!customerDetails || !orderItems || !total) {
       console.error('❌ Missing order details:', {
@@ -126,11 +117,6 @@ export async function POST(request: NextRequest) {
 
     // Call backend API to create order
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
-    console.log('🔵 Calling backend API:', `${backendUrl}/orders/payment/create`)
-    console.log('📋 Request format:')
-    console.log('  Content-Type: application/json')
-    console.log('  Method: POST')
-    console.log('  Endpoint: /orders/payment/create')
 
     const createOrderRes = await fetch(`${backendUrl}/orders/payment/create`, {
       method: 'POST',
@@ -152,10 +138,6 @@ export async function POST(request: NextRequest) {
     })
 
     const orderData = await createOrderRes.json()
-    console.log('📍 Backend response status:', createOrderRes.status)
-    console.log('📍 Backend response data keys:', Object.keys(orderData))
-    console.log('📍 Backend response:', JSON.stringify(orderData, null, 2))
-
     if (!createOrderRes.ok) {
       console.error('❌ Backend order creation failed')
       console.error('❌ Status code:', createOrderRes.status)
@@ -171,7 +153,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('✅ Order created successfully:', orderData.orderId || orderData._id)
 
     return NextResponse.json(
       {

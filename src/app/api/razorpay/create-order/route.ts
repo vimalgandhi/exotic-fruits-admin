@@ -15,10 +15,6 @@ function getRazorpayInstance() {
   const keyId = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID
   const keySecret = process.env.RAZORPAY_KEY_SECRET
 
-  console.log('🔵 Getting Razorpay instance...')
-  console.log('RAZORPAY_KEY_ID from env:', keyId ? '✅ Set' : '❌ Missing')
-  console.log('RAZORPAY_KEY_SECRET from env:', keySecret ? '✅ Set' : '❌ Missing')
-  console.log('Environment variables available:', Object.keys(process.env).filter(k => k.includes('RAZORPAY')))
 
   if (!keyId || !keySecret) {
     const errorMsg = `Razorpay credentials missing: keyId=${!!keyId}, keySecret=${!!keySecret}. Available vars: ${Object.keys(process.env).filter(k => k.includes('RAZORPAY')).join(', ')}`
@@ -27,12 +23,10 @@ function getRazorpayInstance() {
   }
 
   try {
-    console.log('Creating Razorpay instance with keyId:', keyId.substring(0, 15) + '...')
     const instance = new Razorpay({
       key_id: keyId,
       key_secret: keySecret,
     })
-    console.log('✅ Razorpay instance created successfully')
     return instance
   } catch (error) {
     console.error('❌ Failed to create Razorpay instance:', error)
@@ -44,9 +38,6 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { amount, orderId, email, phone, name } = body as OrderRequest
-
-    console.log('🔵 POST /api/razorpay/create-order')
-    console.log('Request body:', { amount, orderId, email, phone, name })
 
     // Validate input
     if (!amount || !orderId || !email || !phone || !name) {
@@ -86,14 +77,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Get Razorpay instance
-    console.log('🔵 Getting Razorpay instance...')
     const razorpay = getRazorpayInstance()
 
-    // Amount is already in paise from frontend
-    console.log('💰 Using amount:', amount, 'paise (₹' + (amount / 100) + ')')
-
     // Create Razorpay order
-    console.log('🔵 Calling razorpay.orders.create()')
     type OrderPayload = Parameters<typeof razorpay.orders.create>[0]
     const orderPayload: OrderPayload = {
       amount,
@@ -107,10 +93,8 @@ export async function POST(request: NextRequest) {
       },
     }
 
-    console.log('📋 Order payload:', JSON.stringify(orderPayload, null, 2))
     const order = await razorpay.orders.create(orderPayload)
 
-    console.log('✅ Order created successfully:', order.id)
 
     return NextResponse.json(
       {
