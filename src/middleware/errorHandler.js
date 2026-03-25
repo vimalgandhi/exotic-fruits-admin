@@ -1,6 +1,7 @@
 'use strict';
 
 const { AppError } = require('../utils/errors');
+const { sendError } = require('../utils/responses');
 
 const notFound = (req, res, next) => {
   next(new AppError(`Route ${req.method} ${req.originalUrl} not found`, 404, 'NOT_FOUND'));
@@ -40,10 +41,7 @@ const errorHandler = (err, req, res, next) => {
     console.error('Error:', err);
   }
 
-  res.status(statusCode).json({
-    success: false,
-    error: { code, message, details }
-  });
+  return sendError(res, statusCode, code, message, details);
 };
 
 module.exports = { notFound, errorHandler };

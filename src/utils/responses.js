@@ -7,9 +7,14 @@ const sendSuccess = (res, statusCode = 200, data = null, message = 'Success') =>
 };
 
 const sendError = (res, statusCode = 500, code = 'INTERNAL_ERROR', message = 'An error occurred', details = []) => {
+  // Extract first field message from details if available
+  const fieldMessage = details.length > 0 && details[0].message ? details[0].message : message;
+  
   return res.status(statusCode).json({
     success: false,
-    error: { code, message, details }
+    message: fieldMessage,
+    code,
+    details
   });
 };
 

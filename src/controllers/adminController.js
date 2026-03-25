@@ -4,7 +4,7 @@ const { sequelize } = require('../config/database');
 const User = require('../models/User');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
-const { sendSuccess } = require('../utils/responses');
+const { sendSuccess, sendPaginated } = require('../utils/responses');
 const { getPaginationParams } = require('../utils/helpers');
 
 const getDashboard = async (req, res, next) => {
@@ -50,7 +50,7 @@ const getAdminProducts = async (req, res, next) => {
       p.category_name = p.category ? p.category.name : null;
       return p;
     });
-    return res.json({ success: true, data: products, pagination: { total: count, page, limit, pages: Math.ceil(count / limit) } });
+    return sendPaginated(res, products, count, page, limit, 'Products retrieved');
   } catch (err) {
     next(err);
   }
@@ -64,7 +64,7 @@ const getAdminOrders = async (req, res, next) => {
       limit,
       offset
     });
-    return res.json({ success: true, data: rows, pagination: { total: count, page, limit, pages: Math.ceil(count / limit) } });
+    return sendPaginated(res, rows, count, page, limit, 'Orders retrieved');
   } catch (err) {
     next(err);
   }
@@ -79,7 +79,7 @@ const getAdminUsers = async (req, res, next) => {
       limit,
       offset
     });
-    return res.json({ success: true, data: rows, pagination: { total: count, page, limit, pages: Math.ceil(count / limit) } });
+    return sendPaginated(res, rows, count, page, limit, 'Users retrieved');
   } catch (err) {
     next(err);
   }

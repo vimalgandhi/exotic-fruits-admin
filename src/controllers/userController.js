@@ -2,7 +2,7 @@
 
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
-const { sendSuccess, sendError } = require('../utils/responses');
+const { sendSuccess, sendError, sendPaginated } = require('../utils/responses');
 const { getPaginationParams } = require('../utils/helpers');
 
 const getProfile = async (req, res, next) => {
@@ -59,7 +59,7 @@ const getAllUsers = async (req, res, next) => {
       limit,
       offset
     });
-    return res.json({ success: true, data: rows, pagination: { total: count, page, limit, pages: Math.ceil(count / limit) } });
+    return sendPaginated(res, rows, count, page, limit, 'Users retrieved');
   } catch (err) {
     next(err);
   }
